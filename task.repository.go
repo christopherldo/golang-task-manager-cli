@@ -46,7 +46,7 @@ func updateTaskOnDatabase(database *os.File, taskToBeUpdated Task) {
 }
 */
 
-func markTaskAsDone(taskId int) {
+func markTaskAsDone(taskId int) error {
 	allTasks := getAllTasksFromDatabase()
 
 	idx := slices.IndexFunc(allTasks, func(task Task) bool {
@@ -54,12 +54,13 @@ func markTaskAsDone(taskId int) {
 	})
 
 	if idx == -1 {
-		fmt.Println("Task não encontrado com esse ID")
-		return
+		return fmt.Errorf("Task não encontrado com esse ID")
 	}
 
 	allTasks[idx].IsDone = true
 	writeDatabase(allTasks)
+
+	return nil
 }
 
 func getLastTaskId() int {

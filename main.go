@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strconv"
 )
 
 type ProgramSession string
@@ -31,141 +29,24 @@ type Task struct {
 
 func main() {
 	ensureDataBaseExists()
-	taskId := getLastTaskId() + 1
 
-	scanner := bufio.NewScanner(os.Stdin)
-	programSession := MenuSession
+	allArgs := os.Args
 
-	for {
-		if programSession == ExitSession {
-			fmt.Println(`===============================================
-Muito obrigado por usar o TASK CLI.
-===============================================`)
-			break
-		}
+	if len(allArgs) == 1 {
+		startInteractiveMenu()
+		return
+	}
 
-		if programSession == MenuSession {
-			fmt.Println(`===============================================
-Bem-vindo ao TASK CLI
-===============================================
-O que deseja?
-1 - Adicionar uma task.
-2 - Listar todas as tasks adicionadas.
-3 - Marcar uma task como concluída.
-9 - Voltar ao menu principal.
-0 - Sair do programa.`)
-		}
-
-		if programSession == AddingTaskSession {
-			fmt.Println("Digite a descrição da sua task:")
-			scanner.Scan()
-			taskDescription := scanner.Text()
-			appendTaskToDatabase(Task{taskId, taskDescription, false})
-			taskId++
-			programSession = AddedTaskSession
-		}
-
-		if programSession == AddedTaskSession {
-			fmt.Println(`===============================================
-Task adicionada!
-===============================================
-O que deseja?
-1 - Adicionar outra task.
-2 - Listar todas as tasks adicionadas.
-3 - Marcar uma task como concluída.
-9 - Voltar ao menu principal.
-0 - Sair do programa.`)
-		}
-
-		if programSession == ListAllTasksSession {
-			fmt.Println("===============================================")
-
-			taskList := getAllTasksFromDatabase()
-
-			if len(taskList) == 0 {
-				fmt.Println("Nenhuma task ainda adicionada")
-			} else {
-				for _, task := range taskList {
-					fmt.Printf("ID: %d, Descrição: %s, Completada? %t\n", task.ID, task.Description, task.IsDone)
-				}
-			}
-
-			fmt.Println(`===============================================
-O que deseja agora?
-1 - Adicionar uma task.
-2 - Listar novamente todas as tasks adicionadas.
-3 - Marcar uma task como concluída.
-9 - Voltar ao menu principal.
-0 - Sair do programa.`)
-		}
-
-		if programSession == CompletingTaskSession {
-			for {
-				fmt.Println("Digite o ID da task ou 0 para cancelar:")
-				scanner.Scan()
-				taskToBeMarkedAsCompleted, err := strconv.Atoi(scanner.Text())
-
-				if err != nil {
-					fmt.Println("Opção inválida")
-					continue
-				}
-
-				if taskToBeMarkedAsCompleted == 0 {
-					programSession = MenuSession
-					fmt.Println(`===============================================
-Opção cancelada.
-===============================================
-O que deseja agora?
-1 - Adicionar uma task.
-2 - Listar todas as tasks adicionadas.
-3 - Marcar outra task como concluída.
-9 - Voltar ao menu principal.
-0 - Sair do programa.`)
-					break
-				}
-
-				markTaskAsDone(taskToBeMarkedAsCompleted)
-
-				fmt.Println("===============================================")
-				fmt.Printf("Task de ID: %d marcada como concluída\n", taskToBeMarkedAsCompleted)
-				fmt.Println(`===============================================
-O que deseja agora?
-1 - Adicionar uma task.
-2 - Listar todas as tasks adicionadas.
-3 - Marcar outra task como concluída.
-9 - Voltar ao menu principal.
-0 - Sair do programa.`)
-				break
-			}
-		}
-
-		scanner.Scan()
-		menuOption, err := strconv.Atoi(scanner.Text())
-
-		if err != nil {
-			fmt.Println(`===============================================
-Opção inválida!
-===============================================`)
-			continue
-		}
-
-		switch menuOption {
-		case 1:
-			programSession = AddingTaskSession
-		case 2:
-			programSession = ListAllTasksSession
-		case 3:
-			programSession = CompletingTaskSession
-		case 9:
-			programSession = MenuSession
-		case 0:
-			programSession = ExitSession
-		default:
-			fmt.Println("Opção inválida")
-		}
-
-		if err := scanner.Err(); err != nil {
-			fmt.Println("Erro ao ler a entrada:", err)
-		}
+	switch allArgs[1] {
+	case "help":
+		cliFuncHelp()
+	case "add":
+		cliFuncAdd(allArgs)
+	case "list":
+		cliFuncList()
+	case "done":
+		cliFuncDone(allArgs)
+	default:
+		fmt.Println("Opção inválida")
 	}
 }
