@@ -34,8 +34,6 @@ func httpCreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(task)
-
 	taskId := getLastTaskId() + 1
 
 	appendTaskToDatabase(Task{taskId, task.Description, false})
