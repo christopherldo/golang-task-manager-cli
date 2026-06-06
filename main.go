@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"slices"
 	"strconv"
 )
 
@@ -20,6 +19,10 @@ const (
 	ExitSession           ProgramSession = "exit"
 )
 
+const (
+	DB_URL = "db.json"
+)
+
 type Task struct {
 	ID          int
 	Description string
@@ -27,10 +30,10 @@ type Task struct {
 }
 
 func main() {
-	var taskList []Task
+	createDatabaseFile()
+	taskId := getLastTaskId() + 1
 
 	scanner := bufio.NewScanner(os.Stdin)
-	taskId := 1
 	programSession := MenuSession
 
 	for {
@@ -57,7 +60,7 @@ O que deseja?
 			fmt.Println("Digite a descrição da sua task:")
 			scanner.Scan()
 			taskDescription := scanner.Text()
-			taskList = append(taskList, Task{taskId, taskDescription, false})
+			appendTaskToDatabase(Task{taskId, taskDescription, false})
 			taskId++
 			programSession = AddedTaskSession
 		}
@@ -76,6 +79,8 @@ O que deseja?
 
 		if programSession == ListAllTasksSession {
 			fmt.Println("===============================================")
+
+			taskList := getAllTasksFromDatabase()
 
 			if len(taskList) == 0 {
 				fmt.Println("Nenhuma task ainda adicionada")
@@ -119,26 +124,18 @@ O que deseja agora?
 					break
 				}
 
-				idx := slices.IndexFunc(taskList, func(task Task) bool {
-					return task.ID == taskToBeMarkedAsCompleted
-				})
+				markTaskAsDone(taskToBeMarkedAsCompleted)
 
-				if idx == -1 {
-					fmt.Println("Task não encontrado com esse ID")
-				} else {
-					taskList[idx].IsDone = true
-
-					fmt.Println("===============================================")
-					fmt.Printf("Task de ID: %d marcada como concluída\n", taskToBeMarkedAsCompleted)
-					fmt.Println(`===============================================
+				fmt.Println("===============================================")
+				fmt.Printf("Task de ID: %d marcada como concluída\n", taskToBeMarkedAsCompleted)
+				fmt.Println(`===============================================
 O que deseja agora?
 1 - Adicionar uma task.
 2 - Listar todas as tasks adicionadas.
 3 - Marcar outra task como concluída.
 9 - Voltar ao menu principal.
 0 - Sair do programa.`)
-					break
-				}
+				break
 			}
 		}
 
