@@ -50,15 +50,23 @@ func httpMarkTaskAsDone(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, "Failed to convert string to numer", http.StatusUnprocessableEntity)
+		return
 	}
 
-	markTaskAsDone(id)
+	err = markTaskAsDone(id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func httpGetAllTasks(w http.ResponseWriter, r *http.Request) {
 	tasks := getAllTasksFromDatabase()
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(tasks)
 }
