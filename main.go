@@ -26,11 +26,11 @@ type ProgramSession string
 
 const (
 	MenuSession           ProgramSession = "menu"
-	AddingTaskSession     ProgramSession = "adding"
-	AddedTaskSession      ProgramSession = "added"
-	ListAllTasksSession   ProgramSession = "list"
-	CompletingTaskSession ProgramSession = "selecting"
-	CompletedTaskSession  ProgramSession = "selected"
+	AddingTaskSession     ProgramSession = "adding_task"
+	AddedTaskSession      ProgramSession = "added_task"
+	ListAllTasksSession   ProgramSession = "list_all_tasks"
+	CompletingTaskSession ProgramSession = "completing_task"
+	CompletedTaskSession  ProgramSession = "completed_task"
 	ExitSession           ProgramSession = "exit"
 )
 
@@ -73,7 +73,7 @@ O que deseja?
 			taskDescription := scanner.Text()
 			taskList = append(taskList, Task{taskId, taskDescription, false})
 			taskId++
-			programSession = "added"
+			programSession = AddedTaskSession
 		}
 
 		if programSession == AddedTaskSession {
