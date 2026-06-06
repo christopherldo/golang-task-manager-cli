@@ -31,6 +31,8 @@ Comandos disponíveis:
                     Ex: ./todo-cli done 1
 
   help              Exibe este menu de ajuda.
+
+  api               Inicia um servidor http para rodar o programa.
 ===============================================`)
 }
 
@@ -90,4 +92,8 @@ func cliFuncDone(args []string) {
 	fmt.Println("===============================================")
 	fmt.Printf("Task de ID: %d marcada como concluída\n", taskId)
 	fmt.Println("===============================================")
+}
+
+func cliFuncApi() {
+	startHttpApi()
 }

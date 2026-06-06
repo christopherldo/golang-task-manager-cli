@@ -46,6 +46,8 @@ func main() {
 		cliFuncList()
 	case "done":
 		cliFuncDone(allArgs)
+	case "api":
+		cliFuncApi()
 	default:
 		fmt.Println("Opção inválida")
 	}
