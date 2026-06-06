@@ -1,17 +1,3 @@
-// Fase 1: O Básico (Estruturas de Dados)
-
-// Comece criando o programa para rodar apenas na memória enquanto o terminal estiver aberto.
-
-//     O que fazer: Crie um menu simples no terminal onde você possa adicionar uma tarefa, listar todas as tarefas e marcar uma como concluída.
-
-//     O que você vai aprender:
-
-//         Criação e uso de structs (ex: criar uma estrutura Task com ID, Description e IsDone).
-
-//         Trabalhar com Slices (as listas do Go) para armazenar as tarefas.
-
-//         Laços de repetição (for) e condicionais (if/else).
-
 package main
 
 import (
