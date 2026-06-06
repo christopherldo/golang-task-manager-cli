@@ -116,6 +116,7 @@ O que deseja agora?
 
 				if err != nil {
 					fmt.Println("Opção inválida")
+					continue
 				}
 
 				if taskToBeMarkedAsCompleted == 0 {
@@ -162,6 +163,7 @@ O que deseja agora?
 			fmt.Println(`===============================================
 Opção inválida!
 ===============================================`)
+			continue
 		}
 
 		switch menuOption {
