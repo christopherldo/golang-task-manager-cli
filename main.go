@@ -30,7 +30,7 @@ type Task struct {
 }
 
 func main() {
-	createDatabaseFile()
+	ensureDataBaseExists()
 	taskId := getLastTaskId() + 1
 
 	scanner := bufio.NewScanner(os.Stdin)

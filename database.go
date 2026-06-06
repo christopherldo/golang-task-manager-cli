@@ -6,20 +6,12 @@ import (
 	"os"
 )
 
-func createDatabaseFile() *os.File {
-	file, err := os.OpenFile(DB_URL, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+func ensureDataBaseExists() {
+	_, err := os.Stat(DB_URL)
 
-	if err != nil {
-		log.Fatalf("Failed to open/create file: %s", err)
-	}
-
-	tasks := getAllTasksFromDatabase()
-
-	if len(tasks) == 0 {
+	if os.IsNotExist(err) {
 		writeDatabase([]Task{})
 	}
-
-	return file
 }
 
 func readDatabase() []byte {
