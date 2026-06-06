@@ -7,10 +7,39 @@ import (
 )
 
 func cliFuncHelp() {
-	fmt.Println("Print menu")
+	fmt.Println(`===============================================
+TASK CLI - Guia de Uso
+===============================================
+Você pode usar este programa de duas formas:
+
+1. MODO INTERATIVO:
+Basta rodar o programa sem nenhum argumento.
+Exemplo: ./todo-cli
+
+2. MODO COMANDOS DIRETOS (CLI):
+Passe a ação e os argumentos diretamente no terminal.
+Uso: ./todo-cli [comando] [argumento]
+
+Comandos disponíveis:
+  add <descrição>   Adiciona uma nova task.
+                    Ex: ./todo-cli add "Estudar Go"
+
+  list              Lista todas as tasks salvas.
+                    Ex: ./todo-cli list
+
+  done <id>         Marca a task correspondente como concluída.
+                    Ex: ./todo-cli done 1
+
+  help              Exibe este menu de ajuda.
+===============================================`)
 }
 
 func cliFuncAdd(args []string) {
+	if len(args) < 3 {
+		fmt.Println("Erro: Você precisa fornecer a descrição da task. Ex: todo-cli add \"Minha task\"")
+		return
+	}
+
 	taskDescription := args[2]
 	taskId := getLastTaskId() + 1
 
@@ -37,6 +66,11 @@ func cliFuncList() {
 }
 
 func cliFuncDone(args []string) {
+	if len(args) < 3 {
+		fmt.Println("Erro: Você precisa fornecer o ID da task. Ex: todo-cli done 1")
+		return
+	}
+
 	taskIdString := args[2]
 	taskId, err := strconv.Atoi(taskIdString)
 
