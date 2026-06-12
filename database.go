@@ -6,6 +6,10 @@ import (
 	"os"
 )
 
+const (
+	DB_URL = "db.json"
+)
+
 func ensureDataBaseExists() {
 	_, err := os.Stat(DB_URL)
 

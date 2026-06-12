@@ -7,6 +7,18 @@ import (
 	"strconv"
 )
 
+type ProgramSession string
+
+const (
+	MenuSession           ProgramSession = "menu"
+	AddingTaskSession     ProgramSession = "adding_task"
+	AddedTaskSession      ProgramSession = "added_task"
+	ListAllTasksSession   ProgramSession = "list_all_tasks"
+	CompletingTaskSession ProgramSession = "completing_task"
+	CompletedTaskSession  ProgramSession = "completed_task"
+	ExitSession           ProgramSession = "exit"
+)
+
 func startInteractiveMenu() {
 	firstAvailableTaskId := getLastTaskId() + 1
 	scanner := bufio.NewScanner(os.Stdin)
