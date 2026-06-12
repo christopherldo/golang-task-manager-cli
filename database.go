@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 )
@@ -18,14 +19,15 @@ func ensureDataBaseExists() {
 	}
 }
 
-func readDatabase() []byte {
+func readDatabase() ([]byte, error) {
 	fileBytes, err := os.ReadFile(DB_URL)
 
 	if err != nil {
-		log.Fatalf("Error reading file: %v", err)
+		fmt.Printf("Error reading file: %v", err)
+		return fileBytes, err
 	}
 
-	return fileBytes
+	return fileBytes, err
 }
 
 func writeDatabase(tasks []Task) {

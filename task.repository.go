@@ -7,25 +7,36 @@ import (
 	"slices"
 )
 
-func appendTaskToDatabase(taskToBeAdded Task) {
-	allTasks := getAllTasksFromDatabase()
+func appendTaskToDatabase(taskToBeAdded Task) error {
+	allTasks, err := getAllTasksFromDatabase()
+
+	if err != nil {
+		return err
+	}
 
 	allTasks = append(allTasks, taskToBeAdded)
 
 	writeDatabase(allTasks)
+
+	return nil
 }
 
-func getAllTasksFromDatabase() []Task {
-	bytes := readDatabase()
+func getAllTasksFromDatabase() ([]Task, error) {
+	bytes, err := readDatabase()
+
+	if err != nil {
+		return []Task{}, err
+	}
+
 	var tasks []Task
 
-	err := json.Unmarshal(bytes, &tasks)
+	err = json.Unmarshal(bytes, &tasks)
 
 	if err != nil {
 		log.Fatalf("Error parsing JSON: %v", err)
 	}
 
-	return tasks
+	return tasks, err
 }
 
 /*
@@ -47,7 +58,11 @@ func updateTaskOnDatabase(database *os.File, taskToBeUpdated Task) {
 */
 
 func markTaskAsDone(taskId int) error {
-	allTasks := getAllTasksFromDatabase()
+	allTasks, err := getAllTasksFromDatabase()
+
+	if err != nil {
+		return err
+	}
 
 	idx := slices.IndexFunc(allTasks, func(task Task) bool {
 		return task.ID == taskId
@@ -63,16 +78,20 @@ func markTaskAsDone(taskId int) error {
 	return nil
 }
 
-func getLastTaskId() int {
-	tasks := getAllTasksFromDatabase()
+func getLastTaskId() (int, error) {
+	tasks, err := getAllTasksFromDatabase()
+
+	if err != nil {
+		return 0, err
+	}
 
 	if len(tasks) == 0 {
-		return 0
+		return 0, err
 	}
 
 	lastIndex := len(tasks) - 1
 
 	lastTask := tasks[lastIndex]
 
-	return lastTask.ID
+	return lastTask.ID, err
 }

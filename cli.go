@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 )
 
@@ -43,7 +42,14 @@ func cliFuncAdd(args []string) {
 	}
 
 	taskDescription := args[2]
-	taskId := getLastTaskId() + 1
+	lastTaskId, err := getLastTaskId()
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	taskId := lastTaskId + 1
 
 	appendTaskToDatabase(Task{taskId, taskDescription, false})
 	fmt.Println(`===============================================
@@ -54,7 +60,12 @@ Task adicionada!
 func cliFuncList() {
 	fmt.Println("===============================================")
 
-	taskList := getAllTasksFromDatabase()
+	taskList, err := getAllTasksFromDatabase()
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 	if len(taskList) == 0 {
 		fmt.Println("Nenhuma task ainda adicionada")
@@ -77,7 +88,8 @@ func cliFuncDone(args []string) {
 	taskId, err := strconv.Atoi(taskIdString)
 
 	if err != nil {
-		log.Fatalf("Failed to parse %s to int", taskIdString)
+		fmt.Printf("Failed to parse %s to int", taskIdString)
+		return
 	}
 
 	err = markTaskAsDone(taskId)

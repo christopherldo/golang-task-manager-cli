@@ -20,7 +20,14 @@ const (
 )
 
 func startInteractiveMenu() {
-	firstAvailableTaskId := getLastTaskId() + 1
+	lastTaskId, err := getLastTaskId()
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	taskId := lastTaskId + 1
 	scanner := bufio.NewScanner(os.Stdin)
 	programSession := MenuSession
 
@@ -48,8 +55,8 @@ O que deseja?
 			fmt.Println("Digite a descrição da sua task:")
 			scanner.Scan()
 			taskDescription := scanner.Text()
-			appendTaskToDatabase(Task{firstAvailableTaskId, taskDescription, false})
-			firstAvailableTaskId++
+			appendTaskToDatabase(Task{taskId, taskDescription, false})
+			taskId++
 			programSession = AddedTaskSession
 		}
 
@@ -66,9 +73,14 @@ O que deseja?
 		}
 
 		if programSession == ListAllTasksSession {
-			fmt.Println("===============================================")
+			taskList, err := getAllTasksFromDatabase()
 
-			taskList := getAllTasksFromDatabase()
+			if err != nil {
+				fmt.Println(err.Error())
+				break
+			}
+
+			fmt.Println("===============================================")
 
 			if len(taskList) == 0 {
 				fmt.Println("Nenhuma task ainda adicionada")
@@ -161,6 +173,7 @@ Opção inválida!
 
 		if err := scanner.Err(); err != nil {
 			fmt.Println("Erro ao ler a entrada:", err)
+			continue
 		}
 	}
 }
