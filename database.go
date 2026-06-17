@@ -17,7 +17,12 @@ func ensureDataBaseExists() error {
 	_, err := os.Stat(DB_URL)
 
 	if os.IsNotExist(err) {
-		writeDatabase([]Task{})
+		err = writeDatabase([]Task{})
+
+		if err != nil {
+			return fmt.Errorf("Error initializing database: %w", err)
+		}
+
 		return nil
 	}
 

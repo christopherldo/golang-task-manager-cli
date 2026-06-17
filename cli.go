@@ -46,7 +46,13 @@ func cliFuncAdd(args []string) {
 
 	taskId := lastTaskId + 1
 
-	appendTaskToDatabase(Task{taskId, taskDescription, false})
+	err := appendTaskToDatabase(Task{taskId, taskDescription, false})
+
+	if err != nil {
+		fmt.Printf("Error trying to append task to the databse: %s", err.Error())
+		return
+	}
+
 	fmt.Println(`===============================================
 Task adicionada!
 ===============================================`)
@@ -97,5 +103,10 @@ func cliFuncDone(args []string) {
 }
 
 func cliFuncApi() {
-	startHttpApi()
+	err := startHttpApi()
+
+	if err != nil {
+		fmt.Printf("Error on cli function that starts api: %s", err.Error())
+		return
+	}
 }

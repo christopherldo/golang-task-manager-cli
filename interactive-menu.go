@@ -20,9 +20,6 @@ const (
 )
 
 func startInteractiveMenu() {
-	lastTaskId := getLastTaskId()
-
-	taskId := lastTaskId + 1
 	scanner := bufio.NewScanner(os.Stdin)
 	programSession := MenuSession
 
@@ -50,8 +47,14 @@ O que deseja?
 			fmt.Println("Digite a descrição da sua task:")
 			scanner.Scan()
 			taskDescription := scanner.Text()
-			appendTaskToDatabase(Task{taskId, taskDescription, false})
-			taskId++
+
+			err := appendTaskToDatabase(Task{getLastTaskId() + 1, taskDescription, false})
+
+			if err != nil {
+				fmt.Printf("Error trying to append task to the database: %s", err.Error())
+				continue
+			}
+
 			programSession = AddedTaskSession
 		}
 

@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func startHttpApi() {
+func startHttpApi() error {
 	fmt.Println("Servidor http iniciado")
 
 	mux := http.NewServeMux()
@@ -18,12 +18,23 @@ func startHttpApi() {
 	mux.HandleFunc("PATCH /task/{id}/done", httpMarkTaskAsDone)
 
 	fmt.Println("Starting server on :8080")
-	http.ListenAndServe(":8080", mux)
+	err := http.ListenAndServe(":8080", mux)
+
+	if err != nil {
+		return fmt.Errorf("Error starting HTTP API: %w", err)
+	}
+
+	return nil
 }
 
 func httpServerStatus(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("pong"))
+	_, err := w.Write([]byte("pong"))
+
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func httpCreateTask(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +49,12 @@ func httpCreateTask(w http.ResponseWriter, r *http.Request) {
 
 	taskId := lastTaskId + 1
 
-	appendTaskToDatabase(Task{taskId, task.Description, false})
+	err := appendTaskToDatabase(Task{taskId, task.Description, false})
+
+	if err != nil {
+		http.Error(w, "Internal Server Error while trying to append task to the database", http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusCreated)
 }
@@ -68,5 +84,10 @@ func httpGetAllTasks(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(tasks)
+	err := json.NewEncoder(w).Encode(tasks)
+
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }
