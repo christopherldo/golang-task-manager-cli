@@ -42,12 +42,7 @@ func cliFuncAdd(args []string) {
 	}
 
 	taskDescription := args[2]
-	lastTaskId, err := getLastTaskId()
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
+	lastTaskId := getLastTaskId()
 
 	taskId := lastTaskId + 1
 
@@ -60,12 +55,7 @@ Task adicionada!
 func cliFuncList() {
 	fmt.Println("===============================================")
 
-	taskList, err := getAllTasksFromDatabase()
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
+	taskList := getAllTasksFromDatabase()
 
 	if len(taskList) == 0 {
 		fmt.Println("Nenhuma task ainda adicionada")

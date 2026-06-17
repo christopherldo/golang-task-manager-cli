@@ -6,7 +6,19 @@ import (
 )
 
 func main() {
-	ensureDataBaseExists()
+	err := ensureDataBaseExists()
+
+	if err != nil {
+		fmt.Printf("Error: %s", err.Error())
+		return
+	}
+
+	err = loadDatabaseToMemory()
+
+	if err != nil {
+		fmt.Printf("Error: %s", err.Error())
+		return
+	}
 
 	allArgs := os.Args
 

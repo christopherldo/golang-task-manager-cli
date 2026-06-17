@@ -34,12 +34,7 @@ func httpCreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lastTaskId, err := getLastTaskId()
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	lastTaskId := getLastTaskId()
 
 	taskId := lastTaskId + 1
 
@@ -69,11 +64,7 @@ func httpMarkTaskAsDone(w http.ResponseWriter, r *http.Request) {
 }
 
 func httpGetAllTasks(w http.ResponseWriter, r *http.Request) {
-	tasks, err := getAllTasksFromDatabase()
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	tasks := getAllTasksFromDatabase()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

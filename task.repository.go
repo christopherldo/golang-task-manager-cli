@@ -4,38 +4,36 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"sync"
 )
 
+var cacheMutex sync.RWMutex
+var cachedTasks = []Task{}
+var cachedLastTaskId *int
+
 func appendTaskToDatabase(taskToBeAdded Task) error {
-	allTasks, err := getAllTasksFromDatabase()
+	cacheMutex.Lock()
+
+	cachedTasks = append(cachedTasks, taskToBeAdded)
+	tasksToWrite := cachedTasks
+	cachedLastTaskId = &taskToBeAdded.ID
+
+	cacheMutex.Unlock()
+
+	err := writeDatabase(tasksToWrite)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("Error appeding task to the database: %w", err)
 	}
-
-	allTasks = append(allTasks, taskToBeAdded)
-
-	writeDatabase(allTasks)
 
 	return nil
 }
 
-func getAllTasksFromDatabase() ([]Task, error) {
-	bytes, err := readDatabase()
+func getAllTasksFromDatabase() []Task {
+	cacheMutex.RLock()
+	defer cacheMutex.RUnlock()
 
-	if err != nil {
-		return nil, err
-	}
-
-	var tasks []Task
-
-	err = json.Unmarshal(bytes, &tasks)
-
-	if err != nil {
-		return nil, fmt.Errorf("Error parsing JSON: %w", err)
-	}
-
-	return tasks, err
+	return cachedTasks
 }
 
 /*
@@ -57,40 +55,67 @@ func updateTaskOnDatabase(database *os.File, taskToBeUpdated Task) {
 */
 
 func markTaskAsDone(taskId int) error {
-	allTasks, err := getAllTasksFromDatabase()
+	cacheMutex.Lock()
 
-	if err != nil {
-		return err
-	}
-
-	idx := slices.IndexFunc(allTasks, func(task Task) bool {
+	idx := slices.IndexFunc(cachedTasks, func(task Task) bool {
 		return task.ID == taskId
 	})
 
 	if idx == -1 {
+		cacheMutex.Unlock()
 		return fmt.Errorf("Task não encontrado com esse ID")
 	}
 
-	allTasks[idx].IsDone = true
-	writeDatabase(allTasks)
+	cachedTasks[idx].IsDone = true
+	tasksToWrite := cachedTasks
+
+	cacheMutex.Unlock()
+
+	err := writeDatabase(tasksToWrite)
+
+	if err != nil {
+		return fmt.Errorf("Error marking task as done: %w", err)
+	}
 
 	return nil
 }
 
-func getLastTaskId() (int, error) {
-	tasks, err := getAllTasksFromDatabase()
+func getLastTaskId() int {
+	if cachedLastTaskId != nil {
+		cacheMutex.RLock()
+		defer cacheMutex.RUnlock()
 
-	if err != nil {
-		return 0, err
+		return *cachedLastTaskId
 	}
 
+	tasks := getAllTasksFromDatabase()
+
 	if len(tasks) == 0 {
-		return 0, nil
+		return 0
 	}
 
 	lastIndex := len(tasks) - 1
 
 	lastTask := tasks[lastIndex]
 
-	return lastTask.ID, err
+	return lastTask.ID
+}
+
+func loadDatabaseToMemory() error {
+	bytes, err := readDatabase()
+
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(bytes, &cachedTasks)
+
+	if err != nil {
+		return fmt.Errorf("Error parsing JSON: %w", err)
+	}
+
+	lastTaskId := getLastTaskId()
+	cachedLastTaskId = &lastTaskId
+
+	return nil
 }

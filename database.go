@@ -13,12 +13,19 @@ const (
 
 var dbMutex sync.RWMutex
 
-func ensureDataBaseExists() {
+func ensureDataBaseExists() error {
 	_, err := os.Stat(DB_URL)
 
 	if os.IsNotExist(err) {
 		writeDatabase([]Task{})
+		return nil
 	}
+
+	if err != nil {
+		return fmt.Errorf("Error ensuring database exists: %w", err)
+	}
+
+	return nil
 }
 
 func readDatabase() ([]byte, error) {

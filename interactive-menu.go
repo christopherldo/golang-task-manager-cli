@@ -20,12 +20,7 @@ const (
 )
 
 func startInteractiveMenu() {
-	lastTaskId, err := getLastTaskId()
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
+	lastTaskId := getLastTaskId()
 
 	taskId := lastTaskId + 1
 	scanner := bufio.NewScanner(os.Stdin)
@@ -73,12 +68,7 @@ O que deseja?
 		}
 
 		if programSession == ListAllTasksSession {
-			taskList, err := getAllTasksFromDatabase()
-
-			if err != nil {
-				fmt.Println(err.Error())
-				break
-			}
+			taskList := getAllTasksFromDatabase()
 
 			fmt.Println("===============================================")
 
