@@ -1,9 +1,30 @@
-package main
+package cli
 
 import (
 	"fmt"
 	"strconv"
+
+	"chrisldo.com/todo-cli/internal/todo/api"
+	"chrisldo.com/todo-cli/internal/todo/models"
+	"chrisldo.com/todo-cli/internal/todo/repository"
 )
+
+func HandleCli(allArgs []string) {
+	switch allArgs[1] {
+	case "help":
+		cliFuncHelp()
+	case "add":
+		cliFuncAdd(allArgs)
+	case "list":
+		cliFuncList()
+	case "done":
+		cliFuncDone(allArgs)
+	case "api":
+		cliFuncApi()
+	default:
+		fmt.Println("Opção inválida")
+	}
+}
 
 func cliFuncHelp() {
 	fmt.Println(`===============================================
@@ -42,11 +63,8 @@ func cliFuncAdd(args []string) {
 	}
 
 	taskDescription := args[2]
-	lastTaskId := getLastTaskId()
 
-	taskId := lastTaskId + 1
-
-	err := appendTaskToDatabase(Task{taskId, taskDescription, false})
+	err := repository.AppendTaskToDatabase(models.Task{ID: repository.GetLastTaskId() + 1, Description: taskDescription, IsDone: false})
 
 	if err != nil {
 		fmt.Printf("Error trying to append task to the databse: %s", err.Error())
@@ -61,7 +79,7 @@ Task adicionada!
 func cliFuncList() {
 	fmt.Println("===============================================")
 
-	taskList := getAllTasksFromDatabase()
+	taskList := repository.GetAllTasksFromDatabase()
 
 	if len(taskList) == 0 {
 		fmt.Println("Nenhuma task ainda adicionada")
@@ -88,7 +106,7 @@ func cliFuncDone(args []string) {
 		return
 	}
 
-	err = markTaskAsDone(taskId)
+	err = repository.MarkTaskAsDone(taskId)
 
 	if err != nil {
 		fmt.Println("===============================================")
@@ -103,7 +121,7 @@ func cliFuncDone(args []string) {
 }
 
 func cliFuncApi() {
-	err := startHttpApi()
+	err := api.StartHttpApi()
 
 	if err != nil {
 		fmt.Printf("Error on cli function that starts api: %s", err.Error())

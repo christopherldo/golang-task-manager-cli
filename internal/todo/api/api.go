@@ -1,13 +1,17 @@
-package main
+package api
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"chrisldo.com/todo-cli/internal/todo/dto"
+	"chrisldo.com/todo-cli/internal/todo/models"
+	"chrisldo.com/todo-cli/internal/todo/repository"
 )
 
-func startHttpApi() error {
+func StartHttpApi() error {
 	fmt.Println("Servidor http iniciado")
 
 	mux := http.NewServeMux()
@@ -38,18 +42,14 @@ func httpServerStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func httpCreateTask(w http.ResponseWriter, r *http.Request) {
-	var task CreateTaskDto
+	var task dto.CreateTaskDto
 
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		http.Error(w, "Failed to decode request", http.StatusUnprocessableEntity)
 		return
 	}
 
-	lastTaskId := getLastTaskId()
-
-	taskId := lastTaskId + 1
-
-	err := appendTaskToDatabase(Task{taskId, task.Description, false})
+	err := repository.AppendTaskToDatabase(models.Task{ID: repository.GetLastTaskId() + 1, Description: task.Description, IsDone: false})
 
 	if err != nil {
 		http.Error(w, "Internal Server Error while trying to append task to the database", http.StatusInternalServerError)
@@ -69,7 +69,7 @@ func httpMarkTaskAsDone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = markTaskAsDone(id)
+	err = repository.MarkTaskAsDone(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -80,7 +80,7 @@ func httpMarkTaskAsDone(w http.ResponseWriter, r *http.Request) {
 }
 
 func httpGetAllTasks(w http.ResponseWriter, r *http.Request) {
-	tasks := getAllTasksFromDatabase()
+	tasks := repository.GetAllTasksFromDatabase()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

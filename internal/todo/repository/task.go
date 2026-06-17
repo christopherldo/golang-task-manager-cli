@@ -1,17 +1,20 @@
-package main
+package repository
 
 import (
 	"encoding/json"
 	"fmt"
 	"slices"
 	"sync"
+
+	"chrisldo.com/todo-cli/internal/todo/db"
+	"chrisldo.com/todo-cli/internal/todo/models"
 )
 
 var cacheMutex sync.RWMutex
-var cachedTasks = []Task{}
+var cachedTasks = []models.Task{}
 var cachedLastTaskId *int
 
-func appendTaskToDatabase(taskToBeAdded Task) error {
+func AppendTaskToDatabase(taskToBeAdded models.Task) error {
 	cacheMutex.Lock()
 
 	cachedTasks = append(cachedTasks, taskToBeAdded)
@@ -20,7 +23,7 @@ func appendTaskToDatabase(taskToBeAdded Task) error {
 
 	cacheMutex.Unlock()
 
-	err := writeDatabase(tasksToWrite)
+	err := db.WriteDatabase(tasksToWrite)
 
 	if err != nil {
 		return fmt.Errorf("Error appeding task to the database: %w", err)
@@ -29,7 +32,7 @@ func appendTaskToDatabase(taskToBeAdded Task) error {
 	return nil
 }
 
-func getAllTasksFromDatabase() []Task {
+func GetAllTasksFromDatabase() []models.Task {
 	cacheMutex.RLock()
 	defer cacheMutex.RUnlock()
 
@@ -54,10 +57,10 @@ func updateTaskOnDatabase(database *os.File, taskToBeUpdated Task) {
 }
 */
 
-func markTaskAsDone(taskId int) error {
+func MarkTaskAsDone(taskId int) error {
 	cacheMutex.Lock()
 
-	idx := slices.IndexFunc(cachedTasks, func(task Task) bool {
+	idx := slices.IndexFunc(cachedTasks, func(task models.Task) bool {
 		return task.ID == taskId
 	})
 
@@ -71,7 +74,7 @@ func markTaskAsDone(taskId int) error {
 
 	cacheMutex.Unlock()
 
-	err := writeDatabase(tasksToWrite)
+	err := db.WriteDatabase(tasksToWrite)
 
 	if err != nil {
 		return fmt.Errorf("Error marking task as done: %w", err)
@@ -80,7 +83,7 @@ func markTaskAsDone(taskId int) error {
 	return nil
 }
 
-func getLastTaskId() int {
+func GetLastTaskId() int {
 	if cachedLastTaskId != nil {
 		cacheMutex.RLock()
 		defer cacheMutex.RUnlock()
@@ -88,7 +91,7 @@ func getLastTaskId() int {
 		return *cachedLastTaskId
 	}
 
-	tasks := getAllTasksFromDatabase()
+	tasks := GetAllTasksFromDatabase()
 
 	if len(tasks) == 0 {
 		return 0
@@ -101,8 +104,8 @@ func getLastTaskId() int {
 	return lastTask.ID
 }
 
-func loadDatabaseToMemory() error {
-	bytes, err := readDatabase()
+func LoadDatabaseToMemory() error {
+	bytes, err := db.ReadDatabase()
 
 	if err != nil {
 		return err
@@ -114,7 +117,7 @@ func loadDatabaseToMemory() error {
 		return fmt.Errorf("Error parsing JSON: %w", err)
 	}
 
-	lastTaskId := getLastTaskId()
+	lastTaskId := GetLastTaskId()
 	cachedLastTaskId = &lastTaskId
 
 	return nil

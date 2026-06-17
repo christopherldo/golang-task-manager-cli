@@ -1,10 +1,13 @@
-package main
+package cli
 
 import (
 	"bufio"
 	"fmt"
 	"os"
 	"strconv"
+
+	"chrisldo.com/todo-cli/internal/todo/models"
+	"chrisldo.com/todo-cli/internal/todo/repository"
 )
 
 type ProgramSession string
@@ -19,7 +22,7 @@ const (
 	ExitSession           ProgramSession = "exit"
 )
 
-func startInteractiveMenu() {
+func StartInteractiveMenu() {
 	scanner := bufio.NewScanner(os.Stdin)
 	programSession := MenuSession
 
@@ -48,7 +51,7 @@ O que deseja?
 			scanner.Scan()
 			taskDescription := scanner.Text()
 
-			err := appendTaskToDatabase(Task{getLastTaskId() + 1, taskDescription, false})
+			err := repository.AppendTaskToDatabase(models.Task{ID: repository.GetLastTaskId() + 1, Description: taskDescription, IsDone: false})
 
 			if err != nil {
 				fmt.Printf("Error trying to append task to the database: %s", err.Error())
@@ -71,7 +74,7 @@ O que deseja?
 		}
 
 		if programSession == ListAllTasksSession {
-			taskList := getAllTasksFromDatabase()
+			taskList := repository.GetAllTasksFromDatabase()
 
 			fmt.Println("===============================================")
 
@@ -117,7 +120,7 @@ O que deseja agora?
 					break
 				}
 
-				err = markTaskAsDone(taskToBeMarkedAsCompleted)
+				err = repository.MarkTaskAsDone(taskToBeMarkedAsCompleted)
 
 				if err != nil {
 					fmt.Println("===============================================")

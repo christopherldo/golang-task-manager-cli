@@ -1,10 +1,12 @@
-package main
+package db
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
+
+	"chrisldo.com/todo-cli/internal/todo/models"
 )
 
 const (
@@ -13,11 +15,11 @@ const (
 
 var dbMutex sync.RWMutex
 
-func ensureDataBaseExists() error {
+func EnsureDataBaseExists() error {
 	_, err := os.Stat(DB_URL)
 
 	if os.IsNotExist(err) {
-		err = writeDatabase([]Task{})
+		err = WriteDatabase([]models.Task{})
 
 		if err != nil {
 			return fmt.Errorf("Error initializing database: %w", err)
@@ -33,7 +35,7 @@ func ensureDataBaseExists() error {
 	return nil
 }
 
-func readDatabase() ([]byte, error) {
+func ReadDatabase() ([]byte, error) {
 	dbMutex.RLock()
 	defer dbMutex.RUnlock()
 
@@ -46,7 +48,7 @@ func readDatabase() ([]byte, error) {
 	return fileBytes, nil
 }
 
-func writeDatabase(tasks []Task) error {
+func WriteDatabase(tasks []models.Task) error {
 	fileData, err := json.MarshalIndent(tasks, "", "  ")
 
 	if err != nil {
