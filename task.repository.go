@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"slices"
 )
 
@@ -25,7 +24,7 @@ func getAllTasksFromDatabase() ([]Task, error) {
 	bytes, err := readDatabase()
 
 	if err != nil {
-		return []Task{}, err
+		return nil, err
 	}
 
 	var tasks []Task
@@ -33,7 +32,7 @@ func getAllTasksFromDatabase() ([]Task, error) {
 	err = json.Unmarshal(bytes, &tasks)
 
 	if err != nil {
-		log.Fatalf("Error parsing JSON: %v", err)
+		return nil, fmt.Errorf("Error parsing JSON: %w", err)
 	}
 
 	return tasks, err
@@ -86,7 +85,7 @@ func getLastTaskId() (int, error) {
 	}
 
 	if len(tasks) == 0 {
-		return 0, err
+		return 0, nil
 	}
 
 	lastIndex := len(tasks) - 1

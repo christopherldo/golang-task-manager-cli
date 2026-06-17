@@ -172,7 +172,7 @@ Opção inválida!
 		}
 
 		if err := scanner.Err(); err != nil {
-			fmt.Println("Erro ao ler a entrada:", err)
+			fmt.Printf("Erro ao ler a entrada: %s", err.Error())
 			continue
 		}
 	}

@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -23,23 +22,24 @@ func readDatabase() ([]byte, error) {
 	fileBytes, err := os.ReadFile(DB_URL)
 
 	if err != nil {
-		fmt.Printf("Error reading file: %v", err)
-		return fileBytes, err
+		return nil, fmt.Errorf("Error reading file: %w", err)
 	}
 
-	return fileBytes, err
+	return fileBytes, nil
 }
 
-func writeDatabase(tasks []Task) {
+func writeDatabase(tasks []Task) error {
 	fileData, err := json.MarshalIndent(tasks, "", "  ")
 
 	if err != nil {
-		log.Fatalf("Failed enconding JSON: %s", err)
+		return fmt.Errorf("Failed enconding JSON: %w", err)
 	}
 
 	err = os.WriteFile(DB_URL, fileData, 0644)
 
 	if err != nil {
-		log.Fatalf("Failed to write to database file")
+		return fmt.Errorf("Failed to write to database file: %w", err)
 	}
+
+	return nil
 }
