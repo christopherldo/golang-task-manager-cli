@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 )
 
 const (
 	DB_URL = "db.json"
 )
+
+var dbMutex sync.RWMutex
 
 func ensureDataBaseExists() {
 	_, err := os.Stat(DB_URL)
@@ -19,6 +22,9 @@ func ensureDataBaseExists() {
 }
 
 func readDatabase() ([]byte, error) {
+	dbMutex.RLock()
+	defer dbMutex.RUnlock()
+
 	fileBytes, err := os.ReadFile(DB_URL)
 
 	if err != nil {
@@ -34,6 +40,9 @@ func writeDatabase(tasks []Task) error {
 	if err != nil {
 		return fmt.Errorf("Failed enconding JSON: %w", err)
 	}
+
+	dbMutex.Lock()
+	defer dbMutex.Unlock()
 
 	err = os.WriteFile(DB_URL, fileData, 0644)
 
