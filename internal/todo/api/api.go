@@ -20,6 +20,7 @@ func StartHttpApi() error {
 	mux.HandleFunc("POST /task", httpCreateTask)
 	mux.HandleFunc("GET /task", httpGetAllTasks)
 	mux.HandleFunc("PATCH /task/{id}/done", httpMarkTaskAsDone)
+	mux.HandleFunc("PUT /task/{id}", httpEditTask)
 
 	fmt.Println("Starting server on :8080")
 	err := http.ListenAndServe(":8080", mux)
@@ -90,4 +91,44 @@ func httpGetAllTasks(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+}
+
+func httpEditTask(w http.ResponseWriter, r *http.Request) {
+	idString := r.PathValue("id")
+
+	id, err := strconv.Atoi(idString)
+
+	if err != nil {
+		http.Error(w, "Failed to convert string to numer", http.StatusUnprocessableEntity)
+		return
+	}
+
+	var taskToBeUpdated dto.EditTaskDto
+
+	if err := json.NewDecoder(r.Body).Decode(&taskToBeUpdated); err != nil {
+		http.Error(w, "Failed to decode request", http.StatusUnprocessableEntity)
+		return
+	}
+
+	task, err := repository.GetOneTaskFromDatabase(id)
+
+	if err != nil {
+		http.Error(w, "Task not found with this ID", http.StatusNotFound)
+		return
+	}
+
+	task.Description = taskToBeUpdated.Description
+
+	if taskToBeUpdated.IsDone != nil {
+		task.IsDone = *taskToBeUpdated.IsDone
+	}
+
+	err = repository.UpdateTaskOnDatabase(task)
+
+	if err != nil {
+		http.Error(w, "Internal Server Error while trying to update task on the database", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

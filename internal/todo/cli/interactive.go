@@ -19,6 +19,7 @@ const (
 	ListAllTasksSession   ProgramSession = "list_all_tasks"
 	CompletingTaskSession ProgramSession = "completing_task"
 	CompletedTaskSession  ProgramSession = "completed_task"
+	EditingTaskSession    ProgramSession = "editing_task"
 	ExitSession           ProgramSession = "exit"
 )
 
@@ -27,6 +28,7 @@ func StartInteractiveMenu() {
 	programSession := MenuSession
 
 	for {
+		// Exiting the progam
 		if programSession == ExitSession {
 			fmt.Println(`===============================================
 Muito obrigado por usar o TASK CLI.
@@ -34,18 +36,13 @@ Muito obrigado por usar o TASK CLI.
 			break
 		}
 
+		// Menu
 		if programSession == MenuSession {
 			fmt.Println(`===============================================
-Bem-vindo ao TASK CLI
-===============================================
-O que deseja?
-1 - Adicionar uma task.
-2 - Listar todas as tasks adicionadas.
-3 - Marcar uma task como concluída.
-9 - Voltar ao menu principal.
-0 - Sair do programa.`)
+Bem-vindo ao TASK CLI`)
 		}
 
+		// Adding Task
 		if programSession == AddingTaskSession {
 			fmt.Println("Digite a descrição da sua task:")
 			scanner.Scan()
@@ -61,18 +58,13 @@ O que deseja?
 			programSession = AddedTaskSession
 		}
 
+		// Task Added
 		if programSession == AddedTaskSession {
 			fmt.Println(`===============================================
-Task adicionada!
-===============================================
-O que deseja?
-1 - Adicionar outra task.
-2 - Listar todas as tasks adicionadas.
-3 - Marcar uma task como concluída.
-9 - Voltar ao menu principal.
-0 - Sair do programa.`)
+Task adicionada!`)
 		}
 
+		// List all tasks
 		if programSession == ListAllTasksSession {
 			taskList := repository.GetAllTasksFromDatabase()
 
@@ -85,42 +77,26 @@ O que deseja?
 					fmt.Printf("ID: %d, Descrição: %s, Completada? %t\n", task.ID, task.Description, task.IsDone)
 				}
 			}
-
-			fmt.Println(`===============================================
-O que deseja agora?
-1 - Adicionar uma task.
-2 - Listar novamente todas as tasks adicionadas.
-3 - Marcar uma task como concluída.
-9 - Voltar ao menu principal.
-0 - Sair do programa.`)
 		}
 
+		// Setting Task as Completed
 		if programSession == CompletingTaskSession {
 			for {
-				fmt.Println("Digite o ID da task ou 0 para cancelar:")
-				scanner.Scan()
-				taskToBeMarkedAsCompleted, err := strconv.Atoi(scanner.Text())
+				selectedTask, err := selectTaskById(scanner)
 
 				if err != nil {
 					fmt.Println("Opção inválida")
 					continue
 				}
 
-				if taskToBeMarkedAsCompleted == 0 {
+				if selectedTask == 0 {
 					programSession = MenuSession
 					fmt.Println(`===============================================
-Opção cancelada.
-===============================================
-O que deseja agora?
-1 - Adicionar uma task.
-2 - Listar todas as tasks adicionadas.
-3 - Marcar outra task como concluída.
-9 - Voltar ao menu principal.
-0 - Sair do programa.`)
+Opção cancelada.`)
 					break
 				}
 
-				err = repository.MarkTaskAsDone(taskToBeMarkedAsCompleted)
+				err = repository.MarkTaskAsDone(selectedTask)
 
 				if err != nil {
 					fmt.Println("===============================================")
@@ -130,17 +106,75 @@ O que deseja agora?
 				}
 
 				fmt.Println("===============================================")
-				fmt.Printf("Task de ID: %d marcada como concluída\n", taskToBeMarkedAsCompleted)
-				fmt.Println(`===============================================
-O que deseja agora?
-1 - Adicionar uma task.
-2 - Listar todas as tasks adicionadas.
-3 - Marcar outra task como concluída.
-9 - Voltar ao menu principal.
-0 - Sair do programa.`)
+				fmt.Printf("Task de ID: %d marcada como concluída\n", selectedTask)
+
 				break
 			}
 		}
+
+		if programSession == EditingTaskSession {
+			for {
+				selectedTask, err := selectTaskById(scanner)
+
+				if err != nil {
+					fmt.Println("Opção inválida")
+					continue
+				}
+
+				if selectedTask == 0 {
+					programSession = MenuSession
+					fmt.Println(`===============================================
+Opção cancelada.`)
+					break
+				}
+
+				var taskToBeUpdated models.Task
+
+				taskToBeUpdated, err = repository.GetOneTaskFromDatabase(selectedTask)
+
+				if err != nil {
+					fmt.Println("Task não encontrada. Digite o ID novamente")
+					continue
+				}
+
+				fmt.Println("Digite a nova descrição da task ou ENTER para manter a antiga:")
+
+				scanner.Scan()
+				newTaskDescription := scanner.Text()
+
+				if newTaskDescription == "" {
+					newTaskDescription = taskToBeUpdated.Description
+				}
+
+				fmt.Println("Task já concluída? (Y/N) ou ENTER para manter o estado antigo:")
+
+				scanner.Scan()
+				newTaskIsDoneStatusText := scanner.Text()
+
+				var newTaskIsDoneStatusBool bool
+
+				switch newTaskIsDoneStatusText {
+				case "Y":
+					newTaskIsDoneStatusBool = true
+				case "N":
+					newTaskIsDoneStatusBool = false
+				case "":
+					newTaskIsDoneStatusBool = taskToBeUpdated.IsDone
+				}
+
+				taskToBeUpdated.Description = newTaskDescription
+				taskToBeUpdated.IsDone = newTaskIsDoneStatusBool
+
+				err = repository.UpdateTaskOnDatabase(taskToBeUpdated)
+
+				fmt.Println("===============================================")
+				fmt.Printf("Task de ID: %d editada com sucesso\n", selectedTask)
+
+				break
+			}
+		}
+
+		printMenuCli(programSession)
 
 		scanner.Scan()
 		menuOption, err := strconv.Atoi(scanner.Text())
@@ -159,6 +193,8 @@ Opção inválida!
 			programSession = ListAllTasksSession
 		case 3:
 			programSession = CompletingTaskSession
+		case 4:
+			programSession = EditingTaskSession
 		case 9:
 			programSession = MenuSession
 		case 0:
@@ -172,4 +208,20 @@ Opção inválida!
 			continue
 		}
 	}
+}
+
+func selectTaskById(scanner *bufio.Scanner) (int, error) {
+	fmt.Println("Digite o ID da task ou 0 para cancelar:")
+	scanner.Scan()
+	taskToBeSelected, err := strconv.Atoi(scanner.Text())
+
+	if err != nil {
+		return 0, fmt.Errorf("Opção inválida")
+	}
+
+	if taskToBeSelected == 0 {
+		return 0, nil
+	}
+
+	return taskToBeSelected, nil
 }

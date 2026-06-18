@@ -19,6 +19,8 @@ func HandleCli(allArgs []string) {
 		cliFuncList()
 	case "done":
 		cliFuncDone(allArgs)
+	case "edit":
+		cliFuncEdit(allArgs)
 	case "api":
 		cliFuncApi()
 	default:
@@ -27,9 +29,9 @@ func HandleCli(allArgs []string) {
 }
 
 func cliFuncHelp() {
-	fmt.Println(`===============================================
+	fmt.Println(`=======================================================================================
 TASK CLI - Guia de Uso
-===============================================
+=======================================================================================
 Você pode usar este programa de duas formas:
 
 1. MODO INTERATIVO:
@@ -41,19 +43,23 @@ Passe a ação e os argumentos diretamente no terminal.
 Uso: ./todo-cli [comando] [argumento]
 
 Comandos disponíveis:
-  add <descrição>   Adiciona uma nova task.
-                    Ex: ./todo-cli add "Estudar Go"
+  add <descrição>                       Adiciona uma nova task.
+                                        Ex: ./todo-cli add "Estudar Go"
 
-  list              Lista todas as tasks salvas.
-                    Ex: ./todo-cli list
+  list                                  Lista todas as tasks salvas.
+                                        Ex: ./todo-cli list
 
-  done <id>         Marca a task correspondente como concluída.
-                    Ex: ./todo-cli done 1
+  update <id> <description> <isDone?>   Atualiza uma task.
+                                        Ex: ./todo-cli update 1 "Estudar Go"
+                                        Ex: ./todo-cli update 1 "Estudar Go" true
 
-  help              Exibe este menu de ajuda.
+  done <id>                             Marca a task correspondente como concluída.
+                                        Ex: ./todo-cli done 1
 
-  api               Inicia um servidor http para rodar o programa.
-===============================================`)
+  help                                  Exibe este menu de ajuda.
+
+  api                                   Inicia um servidor http para rodar o programa.
+=======================================================================================`)
 }
 
 func cliFuncAdd(args []string) {
@@ -118,6 +124,61 @@ func cliFuncDone(args []string) {
 	fmt.Println("===============================================")
 	fmt.Printf("Task de ID: %d marcada como concluída\n", taskId)
 	fmt.Println("===============================================")
+}
+
+func cliFuncEdit(args []string) {
+	if len(args) < 4 {
+		fmt.Println("Erro: Você precisa fornecer o ID da task e a descrição. Ex: todo-cli edit 1 \"Estudar Go\"")
+		return
+	}
+
+	taskIdString := args[2]
+	taskDescriptionString := args[3]
+
+	var taskIsDoneString string
+
+	if len(args) >= 5 {
+		taskIsDoneString = args[4]
+	}
+
+	taskId, err := strconv.Atoi(taskIdString)
+
+	if err != nil {
+		fmt.Printf("Failed to parse %s to int", taskIdString)
+		return
+	}
+
+	task, err := repository.GetOneTaskFromDatabase(taskId)
+
+	if err != nil {
+		fmt.Printf("Failed to find task with ID: %d", taskId)
+		return
+	}
+
+	task.Description = taskDescriptionString
+
+	if taskIsDoneString != "" {
+		var newTaskIsDoneStatusBool bool
+
+		switch taskIsDoneString {
+		case "true":
+			newTaskIsDoneStatusBool = true
+		case "false":
+			newTaskIsDoneStatusBool = false
+		default:
+			fmt.Printf("Invalid option for task status")
+			return
+		}
+
+		task.IsDone = newTaskIsDoneStatusBool
+	}
+
+	err = repository.UpdateTaskOnDatabase(task)
+
+	if err != nil {
+		fmt.Printf("Failed to update the task on the database.")
+		return
+	}
 }
 
 func cliFuncApi() {

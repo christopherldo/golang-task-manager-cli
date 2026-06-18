@@ -32,6 +32,21 @@ func AppendTaskToDatabase(taskToBeAdded models.Task) error {
 	return nil
 }
 
+func GetOneTaskFromDatabase(taskId int) (models.Task, error) {
+	cacheMutex.RLock()
+	defer cacheMutex.RUnlock()
+
+	idx := slices.IndexFunc(cachedTasks, func(task models.Task) bool {
+		return task.ID == taskId
+	})
+
+	if idx == -1 {
+		return models.Task{}, fmt.Errorf("Task não encontrado com esse ID")
+	}
+
+	return cachedTasks[idx], nil
+}
+
 func GetAllTasksFromDatabase() []models.Task {
 	cacheMutex.RLock()
 	defer cacheMutex.RUnlock()
@@ -39,23 +54,32 @@ func GetAllTasksFromDatabase() []models.Task {
 	return cachedTasks
 }
 
-/*
-func updateTaskOnDatabase(database *os.File, taskToBeUpdated Task) {
-	allTasks := getAllTasksFromDatabase()
+func UpdateTaskOnDatabase(taskToBeUpdated models.Task) error {
+	cacheMutex.Lock()
 
-	idx := slices.IndexFunc(allTasks, func(task Task) bool {
+	idx := slices.IndexFunc(cachedTasks, func(task models.Task) bool {
 		return task.ID == taskToBeUpdated.ID
 	})
 
 	if idx == -1 {
-		fmt.Println("Task não encontrado com esse ID")
-		return
+		cacheMutex.Unlock()
+		return fmt.Errorf("Task não encontrado com esse ID")
 	}
 
-	allTasks[idx] = taskToBeUpdated
-	writeDatabase(database, allTasks)
+	cachedTasks[idx] = taskToBeUpdated
+
+	tasksToWrite := cachedTasks
+
+	cacheMutex.Unlock()
+
+	err := db.WriteDatabase(tasksToWrite)
+
+	if err != nil {
+		return fmt.Errorf("Error while saving task do the database: %w", err)
+	}
+
+	return nil
 }
-*/
 
 func MarkTaskAsDone(taskId int) error {
 	cacheMutex.Lock()
