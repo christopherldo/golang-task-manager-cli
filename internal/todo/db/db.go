@@ -9,14 +9,11 @@ import (
 	"chrisldo.com/todo-cli/internal/todo/models"
 )
 
-const (
-	DB_URL = "db.json"
-)
-
+var DbUrl = "db.json"
 var dbMutex sync.RWMutex
 
 func EnsureDataBaseExists() error {
-	_, err := os.Stat(DB_URL)
+	_, err := os.Stat(DbUrl)
 
 	if os.IsNotExist(err) {
 		err = WriteDatabase([]models.Task{})
@@ -39,7 +36,7 @@ func ReadDatabase() ([]byte, error) {
 	dbMutex.RLock()
 	defer dbMutex.RUnlock()
 
-	fileBytes, err := os.ReadFile(DB_URL)
+	fileBytes, err := os.ReadFile(DbUrl)
 
 	if err != nil {
 		return nil, fmt.Errorf("Error reading file: %w", err)
@@ -58,7 +55,7 @@ func WriteDatabase(tasks []models.Task) error {
 	dbMutex.Lock()
 	defer dbMutex.Unlock()
 
-	err = os.WriteFile(DB_URL, fileData, 0644)
+	err = os.WriteFile(DbUrl, fileData, 0644)
 
 	if err != nil {
 		return fmt.Errorf("Failed to write to database file: %w", err)
