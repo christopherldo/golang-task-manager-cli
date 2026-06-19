@@ -20,6 +20,7 @@ const (
 	CompletingTaskSession ProgramSession = "completing_task"
 	CompletedTaskSession  ProgramSession = "completed_task"
 	EditingTaskSession    ProgramSession = "editing_task"
+	DeletingTaskSession   ProgramSession = "deleting_task"
 	ExitSession           ProgramSession = "exit"
 )
 
@@ -167,8 +168,47 @@ Opção cancelada.`)
 
 				err = repository.UpdateTaskOnDatabase(taskToBeUpdated)
 
+				if err != nil {
+					fmt.Println("===============================================")
+					fmt.Println(err)
+					fmt.Println("===============================================")
+					continue
+				}
+
 				fmt.Println("===============================================")
 				fmt.Printf("Task de ID: %d editada com sucesso\n", selectedTask)
+
+				break
+			}
+		}
+
+		if programSession == DeletingTaskSession {
+			for {
+				selectedTask, err := selectTaskById(scanner)
+
+				if err != nil {
+					fmt.Println("Opção inválida")
+					continue
+				}
+
+				if selectedTask == 0 {
+					programSession = MenuSession
+					fmt.Println(`===============================================
+Opção cancelada.`)
+					break
+				}
+
+				err = repository.DeleteTaskFromDatabase(selectedTask)
+
+				if err != nil {
+					fmt.Println("===============================================")
+					fmt.Println(err)
+					fmt.Println("===============================================")
+					continue
+				}
+
+				fmt.Println("===============================================")
+				fmt.Printf("Task de ID: %d deletada com sucesso\n", selectedTask)
 
 				break
 			}
@@ -195,6 +235,8 @@ Opção inválida!
 			programSession = CompletingTaskSession
 		case 4:
 			programSession = EditingTaskSession
+		case 5:
+			programSession = DeletingTaskSession
 		case 9:
 			programSession = MenuSession
 		case 0:

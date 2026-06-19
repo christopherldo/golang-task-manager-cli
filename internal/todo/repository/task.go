@@ -128,6 +128,33 @@ func GetLastTaskId() int {
 	return lastTask.ID
 }
 
+func DeleteTaskFromDatabase(taskId int) error {
+	cacheMutex.Lock()
+
+	idx := slices.IndexFunc(cachedTasks, func(task models.Task) bool {
+		return task.ID == taskId
+	})
+
+	if idx == -1 {
+		cacheMutex.Unlock()
+		return fmt.Errorf("Task não encontrado com esse ID")
+	}
+
+	cachedTasks = slices.Delete(cachedTasks, idx, idx+1)
+
+	tasksToWrite := cachedTasks
+
+	cacheMutex.Unlock()
+
+	err := db.WriteDatabase(tasksToWrite)
+
+	if err != nil {
+		return fmt.Errorf("Error saving tasks to the database: %w", err)
+	}
+
+	return nil
+}
+
 func LoadDatabaseToMemory() error {
 	bytes, err := db.ReadDatabase()
 

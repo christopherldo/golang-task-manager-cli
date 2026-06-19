@@ -21,6 +21,7 @@ func StartHttpApi() error {
 	mux.HandleFunc("GET /task", httpGetAllTasks)
 	mux.HandleFunc("PATCH /task/{id}/done", httpMarkTaskAsDone)
 	mux.HandleFunc("PUT /task/{id}", httpEditTask)
+	mux.HandleFunc("DELETE /task/{id}", httpDeleteTask)
 
 	fmt.Println("Starting server on :8080")
 	err := http.ListenAndServe(":8080", mux)
@@ -66,7 +67,7 @@ func httpMarkTaskAsDone(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(idString)
 
 	if err != nil {
-		http.Error(w, "Failed to convert string to numer", http.StatusUnprocessableEntity)
+		http.Error(w, "Failed to convert string to number", http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -77,7 +78,7 @@ func httpMarkTaskAsDone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func httpGetAllTasks(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +100,7 @@ func httpEditTask(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(idString)
 
 	if err != nil {
-		http.Error(w, "Failed to convert string to numer", http.StatusUnprocessableEntity)
+		http.Error(w, "Failed to convert string to number", http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -130,5 +131,25 @@ func httpEditTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func httpDeleteTask(w http.ResponseWriter, r *http.Request) {
+	idString := r.PathValue("id")
+
+	id, err := strconv.Atoi(idString)
+
+	if err != nil {
+		http.Error(w, "Failed to convert string to number", http.StatusUnprocessableEntity)
+		return
+	}
+
+	err = repository.DeleteTaskFromDatabase(id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

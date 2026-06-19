@@ -21,6 +21,8 @@ func HandleCli(allArgs []string) {
 		cliFuncDone(allArgs)
 	case "edit":
 		cliFuncEdit(allArgs)
+	case "delete":
+		cliFuncDelete(allArgs)
 	case "api":
 		cliFuncApi()
 	default:
@@ -179,6 +181,34 @@ func cliFuncEdit(args []string) {
 		fmt.Printf("Failed to update the task on the database.")
 		return
 	}
+}
+
+func cliFuncDelete(args []string) {
+	if len(args) < 3 {
+		fmt.Println("Erro: Você precisa fornecer o ID da task. Ex: todo-cli delete 1")
+		return
+	}
+
+	taskIdString := args[2]
+	taskId, err := strconv.Atoi(taskIdString)
+
+	if err != nil {
+		fmt.Printf("Failed to parse %s to int", taskIdString)
+		return
+	}
+
+	err = repository.DeleteTaskFromDatabase(taskId)
+
+	if err != nil {
+		fmt.Println("===============================================")
+		fmt.Println(err)
+		fmt.Println("===============================================")
+		return
+	}
+
+	fmt.Println("===============================================")
+	fmt.Printf("Task de ID: %d deletada com sucesso\n", taskId)
+	fmt.Println("===============================================")
 }
 
 func cliFuncApi() {

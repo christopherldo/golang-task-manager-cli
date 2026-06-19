@@ -11,6 +11,7 @@ O que deseja?
 2 - Listar todas as tasks adicionadas.
 3 - Marcar uma task como concluída.
 4 - Editar uma task.
+5 - Deletar uma task.
 9 - Voltar ao menu principal.
 0 - Sair do programa.`)
 	case AddedTaskSession:
@@ -20,6 +21,7 @@ O que deseja?
 2 - Listar todas as tasks adicionadas.
 3 - Marcar uma task como concluída.
 4 - Editar uma task.
+5 - Deletar uma task.
 9 - Voltar ao menu principal.
 0 - Sair do programa.`)
 	case ListAllTasksSession:
@@ -29,6 +31,7 @@ O que deseja agora?
 2 - Listar novamente todas as tasks adicionadas.
 3 - Marcar uma task como concluída.
 4 - Editar uma task.
+5 - Deletar uma task.
 9 - Voltar ao menu principal.
 0 - Sair do programa.`)
 	case CompletingTaskSession:
@@ -38,6 +41,7 @@ O que deseja agora?
 2 - Listar todas as tasks adicionadas.
 3 - Marcar outra task como concluída.
 4 - Editar uma task.
+5 - Deletar uma task.
 9 - Voltar ao menu principal.
 0 - Sair do programa.`)
 	case EditingTaskSession:
@@ -47,6 +51,17 @@ O que deseja agora?
 2 - Listar todas as tasks adicionadas.
 3 - Marcar uma task como concluída.
 4 - Editar outra task.
+5 - Deletar uma task.
+9 - Voltar ao menu principal.
+0 - Sair do programa.`)
+	case DeletingTaskSession:
+		fmt.Println(`===============================================
+O que deseja agora?
+1 - Adicionar uma task.
+2 - Listar todas as tasks adicionadas.
+3 - Marcar uma task como concluída.
+4 - Editar outra task.
+5 - Deletar outra task.
 9 - Voltar ao menu principal.
 0 - Sair do programa.`)
 	default:
