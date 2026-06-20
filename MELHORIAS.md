@@ -50,9 +50,9 @@ func New(store Store) *Repository { ... }
 func (r *Repository) Add(desc string) (models.Task, error) { ... }
 ```
 
-- [ ] Encapsular estado no struct `Repository`.
-- [ ] Definir uma interface `Store` para o backend de persistência (permite mock e troca por SQLite depois).
-- [ ] Remover o `resetState()` global dos testes (cada teste cria sua própria instância).
+- [x] Encapsular estado no struct `Repository`.
+- [x] Definir uma interface `Store` para o backend de persistência (permite mock e troca por SQLite depois).
+- [x] Remover o `resetState()` global dos testes (cada teste cria sua própria instância).
 
 ---
 

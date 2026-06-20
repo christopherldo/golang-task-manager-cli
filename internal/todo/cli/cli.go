@@ -4,33 +4,40 @@ import (
 	"fmt"
 	"strconv"
 
-	"chrisldo.com/todo-cli/internal/todo/api"
 	"chrisldo.com/todo-cli/internal/todo/models"
 	"chrisldo.com/todo-cli/internal/todo/repository"
 )
 
-func HandleCli(allArgs []string) {
+type TaskCli struct {
+	repo *repository.TaskRepository
+}
+
+func NewTaskCli(repo *repository.TaskRepository) *TaskCli {
+	return &TaskCli{
+		repo: repo,
+	}
+}
+
+func (taskCli *TaskCli) HandleCli(allArgs []string) {
 	switch allArgs[1] {
 	case "help":
-		cliFuncHelp()
+		taskCli.cliFuncHelp()
 	case "add":
-		cliFuncAdd(allArgs)
+		taskCli.cliFuncAdd(allArgs)
 	case "list":
-		cliFuncList()
+		taskCli.cliFuncList()
 	case "done":
-		cliFuncDone(allArgs)
+		taskCli.cliFuncDone(allArgs)
 	case "edit":
-		cliFuncEdit(allArgs)
+		taskCli.cliFuncEdit(allArgs)
 	case "delete":
-		cliFuncDelete(allArgs)
-	case "api":
-		cliFuncApi()
+		taskCli.cliFuncDelete(allArgs)
 	default:
 		fmt.Println("Opção inválida")
 	}
 }
 
-func cliFuncHelp() {
+func (taskCli *TaskCli) cliFuncHelp() {
 	fmt.Println(`=======================================================================================
 TASK CLI - Guia de Uso
 =======================================================================================
@@ -64,7 +71,7 @@ Comandos disponíveis:
 =======================================================================================`)
 }
 
-func cliFuncAdd(args []string) {
+func (taskCli *TaskCli) cliFuncAdd(args []string) {
 	if len(args) < 3 {
 		fmt.Println("Erro: Você precisa fornecer a descrição da task. Ex: todo-cli add \"Minha task\"")
 		return
@@ -72,7 +79,7 @@ func cliFuncAdd(args []string) {
 
 	taskDescription := args[2]
 
-	err := repository.AppendTaskToDatabase(models.Task{ID: repository.GetLastTaskId() + 1, Description: taskDescription, IsDone: false})
+	err := taskCli.repo.AppendTaskToDatabase(models.Task{ID: taskCli.repo.GetLastTaskId() + 1, Description: taskDescription, IsDone: false})
 
 	if err != nil {
 		fmt.Printf("Error trying to append task to the databse: %s", err.Error())
@@ -84,10 +91,10 @@ Task adicionada!
 ===============================================`)
 }
 
-func cliFuncList() {
+func (taskCli *TaskCli) cliFuncList() {
 	fmt.Println("===============================================")
 
-	taskList := repository.GetAllTasksFromDatabase()
+	taskList := taskCli.repo.GetAllTasksFromDatabase()
 
 	if len(taskList) == 0 {
 		fmt.Println("Nenhuma task ainda adicionada")
@@ -100,7 +107,7 @@ func cliFuncList() {
 	fmt.Println("===============================================")
 }
 
-func cliFuncDone(args []string) {
+func (taskCli *TaskCli) cliFuncDone(args []string) {
 	if len(args) < 3 {
 		fmt.Println("Erro: Você precisa fornecer o ID da task. Ex: todo-cli done 1")
 		return
@@ -114,7 +121,7 @@ func cliFuncDone(args []string) {
 		return
 	}
 
-	err = repository.MarkTaskAsDone(taskId)
+	err = taskCli.repo.MarkTaskAsDone(taskId)
 
 	if err != nil {
 		fmt.Println("===============================================")
@@ -128,7 +135,7 @@ func cliFuncDone(args []string) {
 	fmt.Println("===============================================")
 }
 
-func cliFuncEdit(args []string) {
+func (taskCli *TaskCli) cliFuncEdit(args []string) {
 	if len(args) < 4 {
 		fmt.Println("Erro: Você precisa fornecer o ID da task e a descrição. Ex: todo-cli edit 1 \"Estudar Go\"")
 		return
@@ -150,7 +157,7 @@ func cliFuncEdit(args []string) {
 		return
 	}
 
-	task, err := repository.GetOneTaskFromDatabase(taskId)
+	task, err := taskCli.repo.GetOneTaskFromDatabase(taskId)
 
 	if err != nil {
 		fmt.Printf("Failed to find task with ID: %d", taskId)
@@ -175,7 +182,7 @@ func cliFuncEdit(args []string) {
 		task.IsDone = newTaskIsDoneStatusBool
 	}
 
-	err = repository.UpdateTaskOnDatabase(task)
+	err = taskCli.repo.UpdateTaskOnDatabase(task)
 
 	if err != nil {
 		fmt.Printf("Failed to update the task on the database.")
@@ -183,7 +190,7 @@ func cliFuncEdit(args []string) {
 	}
 }
 
-func cliFuncDelete(args []string) {
+func (taskCli *TaskCli) cliFuncDelete(args []string) {
 	if len(args) < 3 {
 		fmt.Println("Erro: Você precisa fornecer o ID da task. Ex: todo-cli delete 1")
 		return
@@ -197,7 +204,7 @@ func cliFuncDelete(args []string) {
 		return
 	}
 
-	err = repository.DeleteTaskFromDatabase(taskId)
+	err = taskCli.repo.DeleteTaskFromDatabase(taskId)
 
 	if err != nil {
 		fmt.Println("===============================================")
@@ -209,13 +216,4 @@ func cliFuncDelete(args []string) {
 	fmt.Println("===============================================")
 	fmt.Printf("Task de ID: %d deletada com sucesso\n", taskId)
 	fmt.Println("===============================================")
-}
-
-func cliFuncApi() {
-	err := api.StartHttpApi()
-
-	if err != nil {
-		fmt.Printf("Error on cli function that starts api: %s", err.Error())
-		return
-	}
 }

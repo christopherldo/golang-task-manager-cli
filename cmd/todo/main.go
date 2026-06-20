@@ -2,34 +2,43 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
+	"chrisldo.com/todo-cli/internal/todo/api"
 	"chrisldo.com/todo-cli/internal/todo/cli"
 	"chrisldo.com/todo-cli/internal/todo/db"
 	"chrisldo.com/todo-cli/internal/todo/repository"
 )
 
 func main() {
-	err := db.EnsureDataBaseExists()
+	databaseUrl := "db.json"
+	dataBase, err := db.NewFileStore(databaseUrl)
+
+	if err != nil {
+		panic(err)
+	}
+
+	repo := repository.NewTaskRepository(dataBase)
+
+	err = repo.LoadDatabaseToMemory()
 
 	if err != nil {
 		fmt.Printf("Error: %s", err.Error())
 		return
 	}
 
-	err = repository.LoadDatabaseToMemory()
+	if len(os.Args) > 1 && os.Args[1] == "api" {
+		httpServer := api.NewRestApi(repo)
+		log.Fatal(httpServer.StartHttpApi())
+	}
 
-	if err != nil {
-		fmt.Printf("Error: %s", err.Error())
+	if len(os.Args) == 1 {
+		interactiveCli := cli.NewTaskInteractiveCli(repo)
+		interactiveCli.StartInteractiveMenu()
 		return
 	}
 
-	allArgs := os.Args
-
-	if len(allArgs) == 1 {
-		cli.StartInteractiveMenu()
-		return
-	}
-
-	cli.HandleCli(allArgs)
+	taskCli := cli.NewTaskCli(repo)
+	taskCli.HandleCli(os.Args)
 }

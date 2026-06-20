@@ -8,37 +8,29 @@ import (
 	"chrisldo.com/todo-cli/internal/todo/models"
 )
 
-func resetState() {
-	cacheMutex.Lock()
-	cachedTasks = []models.Task{}
-	cachedLastTaskId = nil
-	cacheMutex.Unlock()
-}
-
-func setupTestEnvironment() func() {
-	originalDB := db.DbUrl
-	db.DbUrl = "test_repository_db.json"
-	resetState()
+func setupTestEnvironment(dbUrl string) (func(), Store) {
+	store, _ := db.NewFileStore(dbUrl)
 
 	return func() {
-		db.DbUrl = originalDB
-		os.Remove("test_repository_db.json")
-	}
+		os.Remove(dbUrl)
+	}, store
 }
 
 func TestAppendAndGetAllTasks(t *testing.T) {
-	cleanup := setupTestEnvironment()
+	cleanup, store := setupTestEnvironment("db_TestAppendAndGetAllTasks_test.json")
 	defer cleanup()
+
+	repo := NewTaskRepository(store)
 
 	newTask := models.Task{ID: 1, Description: "Aprender Go Testing", IsDone: false}
 
-	err := AppendTaskToDatabase(newTask)
+	err := repo.AppendTaskToDatabase(newTask)
 
 	if err != nil {
 		t.Fatalf("Failed trying to add task: %v", err)
 	}
 
-	tasks := GetAllTasksFromDatabase()
+	tasks := repo.GetAllTasksFromDatabase()
 
 	if len(tasks) != 1 {
 		t.Fatalf("Expected 1 task in memory, found %d", len(tasks))
@@ -50,20 +42,22 @@ func TestAppendAndGetAllTasks(t *testing.T) {
 }
 
 func TestUpdateTask(t *testing.T) {
-	cleanup := setupTestEnvironment()
+	cleanup, store := setupTestEnvironment("db_TestUpdateTask_test.json")
 	defer cleanup()
 
-	AppendTaskToDatabase(models.Task{ID: 1, Description: "Task Antiga", IsDone: false})
+	repo := NewTaskRepository(store)
+
+	repo.AppendTaskToDatabase(models.Task{ID: 1, Description: "Task Antiga", IsDone: false})
 
 	updatedTask := models.Task{ID: 1, Description: "Task Nova", IsDone: true}
 
-	err := UpdateTaskOnDatabase(updatedTask)
+	err := repo.UpdateTaskOnDatabase(updatedTask)
 
 	if err != nil {
 		t.Fatalf("Unexpected error while updating: %v", err)
 	}
 
-	taskInDb, _ := GetOneTaskFromDatabase(1)
+	taskInDb, _ := repo.GetOneTaskFromDatabase(1)
 
 	if taskInDb.Description != "Task Nova" || taskInDb.IsDone != true {
 		t.Errorf("Task was not updated correctly")
@@ -71,18 +65,20 @@ func TestUpdateTask(t *testing.T) {
 }
 
 func TestDeleteTask(t *testing.T) {
-	cleanup := setupTestEnvironment()
+	cleanup, store := setupTestEnvironment("db_TestDeleteTask_test.json")
 	defer cleanup()
 
-	AppendTaskToDatabase(models.Task{ID: 10, Description: "Task para deletar", IsDone: false})
+	repo := NewTaskRepository(store)
 
-	err := DeleteTaskFromDatabase(10)
+	repo.AppendTaskToDatabase(models.Task{ID: 10, Description: "Task para deletar", IsDone: false})
+
+	err := repo.DeleteTaskFromDatabase(10)
 
 	if err != nil {
 		t.Fatalf("Unexpected error while deleting task: %v", err)
 	}
 
-	_, err = GetOneTaskFromDatabase(10)
+	_, err = repo.GetOneTaskFromDatabase(10)
 
 	if err == nil {
 		t.Errorf("Expected an error while searching already deleted task, but task it still in memory")
@@ -90,18 +86,20 @@ func TestDeleteTask(t *testing.T) {
 }
 
 func TestMarkTaskAsDone(t *testing.T) {
-	cleanup := setupTestEnvironment()
+	cleanup, store := setupTestEnvironment("db_TestMarkTaskAsDone_test.json")
 	defer cleanup()
 
-	AppendTaskToDatabase(models.Task{ID: 1, Description: "Task para marcar como completada", IsDone: false})
+	repo := NewTaskRepository(store)
 
-	err := MarkTaskAsDone(1)
+	repo.AppendTaskToDatabase(models.Task{ID: 1, Description: "Task para marcar como completada", IsDone: false})
+
+	err := repo.MarkTaskAsDone(1)
 
 	if err != nil {
 		t.Fatalf("Unexpected error while marking task as done: %v", err)
 	}
 
-	taskInDb, _ := GetOneTaskFromDatabase(1)
+	taskInDb, _ := repo.GetOneTaskFromDatabase(1)
 
 	if taskInDb.IsDone != true {
 		t.Errorf("Task was not set as done correctly")
@@ -109,23 +107,25 @@ func TestMarkTaskAsDone(t *testing.T) {
 }
 
 func TestGetLastTaskId(t *testing.T) {
-	cleanup := setupTestEnvironment()
+	cleanup, store := setupTestEnvironment("db_TestGetLastTaskId_test.json")
 	defer cleanup()
 
-	AppendTaskToDatabase(models.Task{})
+	repo := NewTaskRepository(store)
 
-	lastTaskId := GetLastTaskId()
+	repo.AppendTaskToDatabase(models.Task{})
+
+	lastTaskId := repo.GetLastTaskId()
 
 	if lastTaskId != 0 {
 		t.Errorf("Expected the last task id to be exactly 0 when there is no tasks added yet.")
 	}
 
-	AppendTaskToDatabase(models.Task{ID: 1, Description: "Task 1", IsDone: false})
-	AppendTaskToDatabase(models.Task{ID: 1, Description: "Task 2", IsDone: false})
+	repo.AppendTaskToDatabase(models.Task{ID: 1, Description: "Task 1", IsDone: false})
+	repo.AppendTaskToDatabase(models.Task{ID: 1, Description: "Task 2", IsDone: false})
 	// ...
-	AppendTaskToDatabase(models.Task{ID: 100, Description: "Task 100", IsDone: false})
+	repo.AppendTaskToDatabase(models.Task{ID: 100, Description: "Task 100", IsDone: false})
 
-	lastTaskId = GetLastTaskId()
+	lastTaskId = repo.GetLastTaskId()
 
 	if lastTaskId != 100 {
 		t.Errorf("Expected the last task id to be exactly 100")
@@ -133,20 +133,22 @@ func TestGetLastTaskId(t *testing.T) {
 }
 
 func TestLoadDatabaseToMemory(t *testing.T) {
-	cleanup := setupTestEnvironment()
+	cleanup, store := setupTestEnvironment("db_TestGetLastTaskId_test.json")
 	defer cleanup()
 
-	db.WriteDatabase([]models.Task{
+	repo := NewTaskRepository(store)
+
+	repo.store.WriteDatabase([]models.Task{
 		{ID: 1, Description: "Task 1", IsDone: false},
 	})
 
-	err := LoadDatabaseToMemory()
+	err := repo.LoadDatabaseToMemory()
 
 	if err != nil {
 		t.Fatalf("Unexpected error while loading the database file to the memory: %v", err)
 	}
 
-	if len(cachedTasks) != 1 {
-		t.Errorf("Expected exactly 1 task loaded in memory, found %d", len(cachedTasks))
+	if len(repo.cachedTasks) != 1 {
+		t.Errorf("Expected exactly 1 task loaded in memory, found %d", len(repo.cachedTasks))
 	}
 }

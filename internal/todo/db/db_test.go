@@ -8,15 +8,15 @@ import (
 )
 
 func TestWriteAndReadDatabase(t *testing.T) {
-	originalDb := DbUrl
-	DbUrl = "test_db.json"
+	DbUrl := "db_test.json"
 
 	defer func() {
 		os.Remove(DbUrl)
-		DbUrl = originalDb
 	}()
 
-	err := EnsureDataBaseExists()
+	dataBase, err := NewFileStore(DbUrl)
+
+	err = dataBase.ensureDataBaseExists()
 
 	if err != nil {
 		t.Fatalf("Expected database file to exist")
@@ -26,13 +26,13 @@ func TestWriteAndReadDatabase(t *testing.T) {
 		{ID: 1, Description: "Task de Teste", IsDone: false},
 	}
 
-	err = WriteDatabase(mockTests)
+	err = dataBase.WriteDatabase(mockTests)
 
 	if err != nil {
 		t.Fatalf("Expected to write without an error, but failed: %v", err)
 	}
 
-	bytes, err := ReadDatabase()
+	bytes, err := dataBase.ReadDatabase()
 
 	if err != nil {
 		t.Fatalf("Expected to read the database file, but failed: %v", err)

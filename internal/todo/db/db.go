@@ -9,14 +9,30 @@ import (
 	"chrisldo.com/todo-cli/internal/todo/models"
 )
 
-var DbUrl = "db.json"
-var dbMutex sync.RWMutex
+type FileStore struct {
+	mu       sync.RWMutex
+	filePath string
+}
 
-func EnsureDataBaseExists() error {
-	_, err := os.Stat(DbUrl)
+func NewFileStore(path string) (*FileStore, error) {
+	store := &FileStore{
+		filePath: path,
+	}
+
+	err := store.ensureDataBaseExists()
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to initialize database: %w", err)
+	}
+
+	return store, nil
+}
+
+func (fs *FileStore) ensureDataBaseExists() error {
+	_, err := os.Stat(fs.filePath)
 
 	if os.IsNotExist(err) {
-		err = WriteDatabase([]models.Task{})
+		err = fs.WriteDatabase([]models.Task{})
 
 		if err != nil {
 			return fmt.Errorf("Error initializing database: %w", err)
@@ -32,11 +48,11 @@ func EnsureDataBaseExists() error {
 	return nil
 }
 
-func ReadDatabase() ([]byte, error) {
-	dbMutex.RLock()
-	defer dbMutex.RUnlock()
+func (fs *FileStore) ReadDatabase() ([]byte, error) {
+	fs.mu.RLock()
+	defer fs.mu.RUnlock()
 
-	fileBytes, err := os.ReadFile(DbUrl)
+	fileBytes, err := os.ReadFile(fs.filePath)
 
 	if err != nil {
 		return nil, fmt.Errorf("Error reading file: %w", err)
@@ -45,17 +61,17 @@ func ReadDatabase() ([]byte, error) {
 	return fileBytes, nil
 }
 
-func WriteDatabase(tasks []models.Task) error {
+func (fs *FileStore) WriteDatabase(tasks []models.Task) error {
 	fileData, err := json.MarshalIndent(tasks, "", "  ")
 
 	if err != nil {
 		return fmt.Errorf("Failed enconding JSON: %w", err)
 	}
 
-	dbMutex.Lock()
-	defer dbMutex.Unlock()
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
 
-	err = os.WriteFile(DbUrl, fileData, 0644)
+	err = os.WriteFile(fs.filePath, fileData, 0644)
 
 	if err != nil {
 		return fmt.Errorf("Failed to write to database file: %w", err)

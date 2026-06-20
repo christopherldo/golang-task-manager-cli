@@ -11,17 +11,27 @@ import (
 	"chrisldo.com/todo-cli/internal/todo/repository"
 )
 
-func StartHttpApi() error {
+type TaskRestApi struct {
+	repo *repository.TaskRepository
+}
+
+func NewRestApi(repository *repository.TaskRepository) *TaskRestApi {
+	return &TaskRestApi{
+		repo: repository,
+	}
+}
+
+func (api *TaskRestApi) StartHttpApi() error {
 	fmt.Println("Servidor http iniciado")
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /ping", httpServerStatus)
-	mux.HandleFunc("POST /task", httpCreateTask)
-	mux.HandleFunc("GET /task", httpGetAllTasks)
-	mux.HandleFunc("PATCH /task/{id}/done", httpMarkTaskAsDone)
-	mux.HandleFunc("PUT /task/{id}", httpEditTask)
-	mux.HandleFunc("DELETE /task/{id}", httpDeleteTask)
+	mux.HandleFunc("GET /ping", api.httpServerStatus)
+	mux.HandleFunc("POST /task", api.httpCreateTask)
+	mux.HandleFunc("GET /task", api.httpGetAllTasks)
+	mux.HandleFunc("PATCH /task/{id}/done", api.httpMarkTaskAsDone)
+	mux.HandleFunc("PUT /task/{id}", api.httpEditTask)
+	mux.HandleFunc("DELETE /task/{id}", api.httpDeleteTask)
 
 	fmt.Println("Starting server on :8080")
 	err := http.ListenAndServe(":8080", mux)
@@ -33,7 +43,7 @@ func StartHttpApi() error {
 	return nil
 }
 
-func httpServerStatus(w http.ResponseWriter, r *http.Request) {
+func (api *TaskRestApi) httpServerStatus(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write([]byte("pong"))
 
@@ -43,7 +53,7 @@ func httpServerStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func httpCreateTask(w http.ResponseWriter, r *http.Request) {
+func (api *TaskRestApi) httpCreateTask(w http.ResponseWriter, r *http.Request) {
 	var task dto.CreateTaskDto
 
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
@@ -51,7 +61,7 @@ func httpCreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := repository.AppendTaskToDatabase(models.Task{ID: repository.GetLastTaskId() + 1, Description: task.Description, IsDone: false})
+	err := api.repo.AppendTaskToDatabase(models.Task{ID: api.repo.GetLastTaskId() + 1, Description: task.Description, IsDone: false})
 
 	if err != nil {
 		http.Error(w, "Internal Server Error while trying to append task to the database", http.StatusInternalServerError)
@@ -61,7 +71,7 @@ func httpCreateTask(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func httpMarkTaskAsDone(w http.ResponseWriter, r *http.Request) {
+func (api *TaskRestApi) httpMarkTaskAsDone(w http.ResponseWriter, r *http.Request) {
 	idString := r.PathValue("id")
 
 	id, err := strconv.Atoi(idString)
@@ -71,7 +81,7 @@ func httpMarkTaskAsDone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = repository.MarkTaskAsDone(id)
+	err = api.repo.MarkTaskAsDone(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -81,8 +91,8 @@ func httpMarkTaskAsDone(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func httpGetAllTasks(w http.ResponseWriter, r *http.Request) {
-	tasks := repository.GetAllTasksFromDatabase()
+func (api *TaskRestApi) httpGetAllTasks(w http.ResponseWriter, r *http.Request) {
+	tasks := api.repo.GetAllTasksFromDatabase()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -94,7 +104,7 @@ func httpGetAllTasks(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func httpEditTask(w http.ResponseWriter, r *http.Request) {
+func (api *TaskRestApi) httpEditTask(w http.ResponseWriter, r *http.Request) {
 	idString := r.PathValue("id")
 
 	id, err := strconv.Atoi(idString)
@@ -111,7 +121,7 @@ func httpEditTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := repository.GetOneTaskFromDatabase(id)
+	task, err := api.repo.GetOneTaskFromDatabase(id)
 
 	if err != nil {
 		http.Error(w, "Task not found with this ID", http.StatusNotFound)
@@ -124,7 +134,7 @@ func httpEditTask(w http.ResponseWriter, r *http.Request) {
 		task.IsDone = *taskToBeUpdated.IsDone
 	}
 
-	err = repository.UpdateTaskOnDatabase(task)
+	err = api.repo.UpdateTaskOnDatabase(task)
 
 	if err != nil {
 		http.Error(w, "Internal Server Error while trying to update task on the database", http.StatusInternalServerError)
@@ -134,7 +144,7 @@ func httpEditTask(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func httpDeleteTask(w http.ResponseWriter, r *http.Request) {
+func (api *TaskRestApi) httpDeleteTask(w http.ResponseWriter, r *http.Request) {
 	idString := r.PathValue("id")
 
 	id, err := strconv.Atoi(idString)
@@ -144,7 +154,7 @@ func httpDeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = repository.DeleteTaskFromDatabase(id)
+	err = api.repo.DeleteTaskFromDatabase(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)

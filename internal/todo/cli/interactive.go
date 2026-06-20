@@ -24,7 +24,17 @@ const (
 	ExitSession           ProgramSession = "exit"
 )
 
-func StartInteractiveMenu() {
+type TaskInteractiveCli struct {
+	repo *repository.TaskRepository
+}
+
+func NewTaskInteractiveCli(repo *repository.TaskRepository) *TaskInteractiveCli {
+	return &TaskInteractiveCli{
+		repo: repo,
+	}
+}
+
+func (interactiveCli *TaskInteractiveCli) StartInteractiveMenu() {
 	scanner := bufio.NewScanner(os.Stdin)
 	programSession := MenuSession
 
@@ -49,7 +59,7 @@ Bem-vindo ao TASK CLI`)
 			scanner.Scan()
 			taskDescription := scanner.Text()
 
-			err := repository.AppendTaskToDatabase(models.Task{ID: repository.GetLastTaskId() + 1, Description: taskDescription, IsDone: false})
+			err := interactiveCli.repo.AppendTaskToDatabase(models.Task{ID: interactiveCli.repo.GetLastTaskId() + 1, Description: taskDescription, IsDone: false})
 
 			if err != nil {
 				fmt.Printf("Error trying to append task to the database: %s", err.Error())
@@ -67,7 +77,7 @@ Task adicionada!`)
 
 		// List all tasks
 		if programSession == ListAllTasksSession {
-			taskList := repository.GetAllTasksFromDatabase()
+			taskList := interactiveCli.repo.GetAllTasksFromDatabase()
 
 			fmt.Println("===============================================")
 
@@ -97,7 +107,7 @@ Opção cancelada.`)
 					break
 				}
 
-				err = repository.MarkTaskAsDone(selectedTask)
+				err = interactiveCli.repo.MarkTaskAsDone(selectedTask)
 
 				if err != nil {
 					fmt.Println("===============================================")
@@ -131,7 +141,7 @@ Opção cancelada.`)
 
 				var taskToBeUpdated models.Task
 
-				taskToBeUpdated, err = repository.GetOneTaskFromDatabase(selectedTask)
+				taskToBeUpdated, err = interactiveCli.repo.GetOneTaskFromDatabase(selectedTask)
 
 				if err != nil {
 					fmt.Println("Task não encontrada. Digite o ID novamente")
@@ -166,7 +176,7 @@ Opção cancelada.`)
 				taskToBeUpdated.Description = newTaskDescription
 				taskToBeUpdated.IsDone = newTaskIsDoneStatusBool
 
-				err = repository.UpdateTaskOnDatabase(taskToBeUpdated)
+				err = interactiveCli.repo.UpdateTaskOnDatabase(taskToBeUpdated)
 
 				if err != nil {
 					fmt.Println("===============================================")
@@ -198,7 +208,7 @@ Opção cancelada.`)
 					break
 				}
 
-				err = repository.DeleteTaskFromDatabase(selectedTask)
+				err = interactiveCli.repo.DeleteTaskFromDatabase(selectedTask)
 
 				if err != nil {
 					fmt.Println("===============================================")
