@@ -68,8 +68,8 @@ fmt.Errorf("Error reading file: %w", err)
 fmt.Errorf("reading database file: %w", err)
 ```
 
-- [ ] Padronizar todas as strings de erro (minúsculas, sem ponto final).
-- [ ] Unificar o idioma das mensagens (hoje há mistura PT/EN, ex: "Task não encontrado" vs "Error reading file").
+- [x] Padronizar todas as strings de erro (minúsculas, sem ponto final).
+- [x] Unificar o idioma das mensagens (hoje há mistura PT/EN, ex: "Task não encontrado" vs "Error reading file").
 
 ---
 

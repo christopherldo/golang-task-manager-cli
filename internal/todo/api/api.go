@@ -37,7 +37,7 @@ func (api *TaskRestApi) StartHttpApi() error {
 	err := http.ListenAndServe(":8080", mux)
 
 	if err != nil {
-		return fmt.Errorf("Error starting HTTP API: %w", err)
+		return fmt.Errorf("starting HTTP API: %w", err)
 	}
 
 	return nil

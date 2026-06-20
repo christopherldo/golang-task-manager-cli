@@ -22,7 +22,7 @@ func NewFileStore(path string) (*FileStore, error) {
 	err := store.ensureDataBaseExists()
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to initialize database: %w", err)
+		return nil, fmt.Errorf("initializing database: %w", err)
 	}
 
 	return store, nil
@@ -35,14 +35,14 @@ func (fs *FileStore) ensureDataBaseExists() error {
 		err = fs.WriteDatabase([]models.Task{})
 
 		if err != nil {
-			return fmt.Errorf("Error initializing database: %w", err)
+			return fmt.Errorf("initializing database: %w", err)
 		}
 
 		return nil
 	}
 
 	if err != nil {
-		return fmt.Errorf("Error ensuring database exists: %w", err)
+		return fmt.Errorf("ensuring database exists: %w", err)
 	}
 
 	return nil
@@ -55,7 +55,7 @@ func (fs *FileStore) ReadDatabase() ([]byte, error) {
 	fileBytes, err := os.ReadFile(fs.filePath)
 
 	if err != nil {
-		return nil, fmt.Errorf("Error reading file: %w", err)
+		return nil, fmt.Errorf("reading file: %w", err)
 	}
 
 	return fileBytes, nil
@@ -65,7 +65,7 @@ func (fs *FileStore) WriteDatabase(tasks []models.Task) error {
 	fileData, err := json.MarshalIndent(tasks, "", "  ")
 
 	if err != nil {
-		return fmt.Errorf("Failed enconding JSON: %w", err)
+		return fmt.Errorf("enconding JSON: %w", err)
 	}
 
 	fs.mu.Lock()
@@ -74,7 +74,7 @@ func (fs *FileStore) WriteDatabase(tasks []models.Task) error {
 	err = os.WriteFile(fs.filePath, fileData, 0644)
 
 	if err != nil {
-		return fmt.Errorf("Failed to write to database file: %w", err)
+		return fmt.Errorf("writing to database file: %w", err)
 	}
 
 	return nil

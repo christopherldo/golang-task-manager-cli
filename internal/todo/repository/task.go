@@ -35,7 +35,7 @@ func (r *TaskRepository) AppendTaskToDatabase(taskToBeAdded models.Task) error {
 	err := r.store.WriteDatabase(tasksToWrite)
 
 	if err != nil {
-		return fmt.Errorf("Error appeding task to the database: %w", err)
+		return fmt.Errorf("appending task to the database: %w", err)
 	}
 
 	return nil
@@ -50,7 +50,7 @@ func (r *TaskRepository) GetOneTaskFromDatabase(taskId int) (models.Task, error)
 	})
 
 	if idx == -1 {
-		return models.Task{}, fmt.Errorf("Task não encontrado com esse ID")
+		return models.Task{}, fmt.Errorf("not found with this ID: %d", taskId)
 	}
 
 	return r.cachedTasks[idx], nil
@@ -72,7 +72,7 @@ func (r *TaskRepository) UpdateTaskOnDatabase(taskToBeUpdated models.Task) error
 
 	if idx == -1 {
 		r.mu.Unlock()
-		return fmt.Errorf("Task não encontrado com esse ID")
+		return fmt.Errorf("not found with this id: %d", taskToBeUpdated.ID)
 	}
 
 	r.cachedTasks[idx] = taskToBeUpdated
@@ -84,7 +84,7 @@ func (r *TaskRepository) UpdateTaskOnDatabase(taskToBeUpdated models.Task) error
 	err := r.store.WriteDatabase(tasksToWrite)
 
 	if err != nil {
-		return fmt.Errorf("Error while saving task do the database: %w", err)
+		return fmt.Errorf("saving task do the database: %w", err)
 	}
 
 	return nil
@@ -99,7 +99,7 @@ func (r *TaskRepository) MarkTaskAsDone(taskId int) error {
 
 	if idx == -1 {
 		r.mu.Unlock()
-		return fmt.Errorf("Task não encontrado com esse ID")
+		return fmt.Errorf("not found with this ID: %d", taskId)
 	}
 
 	r.cachedTasks[idx].IsDone = true
@@ -110,7 +110,7 @@ func (r *TaskRepository) MarkTaskAsDone(taskId int) error {
 	err := r.store.WriteDatabase(tasksToWrite)
 
 	if err != nil {
-		return fmt.Errorf("Error marking task as done: %w", err)
+		return fmt.Errorf("marking task as done: %w", err)
 	}
 
 	return nil
@@ -146,7 +146,7 @@ func (r *TaskRepository) DeleteTaskFromDatabase(taskId int) error {
 
 	if idx == -1 {
 		r.mu.Unlock()
-		return fmt.Errorf("Task não encontrado com esse ID")
+		return fmt.Errorf("not found with this id: %d", taskId)
 	}
 
 	r.cachedTasks = slices.Delete(r.cachedTasks, idx, idx+1)
@@ -158,7 +158,7 @@ func (r *TaskRepository) DeleteTaskFromDatabase(taskId int) error {
 	err := r.store.WriteDatabase(tasksToWrite)
 
 	if err != nil {
-		return fmt.Errorf("Error saving tasks to the database: %w", err)
+		return fmt.Errorf("saving tasks to the database: %w", err)
 	}
 
 	return nil
@@ -174,7 +174,7 @@ func (r *TaskRepository) LoadDatabaseToMemory() error {
 	err = json.Unmarshal(bytes, &r.cachedTasks)
 
 	if err != nil {
-		return fmt.Errorf("Error parsing JSON: %w", err)
+		return fmt.Errorf("parsing JSON: %w", err)
 	}
 
 	lastTaskId := r.GetLastTaskId()

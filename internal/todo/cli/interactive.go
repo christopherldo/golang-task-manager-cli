@@ -268,7 +268,7 @@ func selectTaskById(scanner *bufio.Scanner) (int, error) {
 	taskToBeSelected, err := strconv.Atoi(scanner.Text())
 
 	if err != nil {
-		return 0, fmt.Errorf("Opção inválida")
+		return 0, fmt.Errorf("invalid option: %w", err)
 	}
 
 	if taskToBeSelected == 0 {
