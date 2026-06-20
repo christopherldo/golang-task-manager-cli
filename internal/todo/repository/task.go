@@ -18,7 +18,7 @@ func AppendTaskToDatabase(taskToBeAdded models.Task) error {
 	cacheMutex.Lock()
 
 	cachedTasks = append(cachedTasks, taskToBeAdded)
-	tasksToWrite := cachedTasks
+	tasksToWrite := slices.Clone(cachedTasks)
 	cachedLastTaskId = &taskToBeAdded.ID
 
 	cacheMutex.Unlock()
@@ -68,7 +68,7 @@ func UpdateTaskOnDatabase(taskToBeUpdated models.Task) error {
 
 	cachedTasks[idx] = taskToBeUpdated
 
-	tasksToWrite := cachedTasks
+	tasksToWrite := slices.Clone(cachedTasks)
 
 	cacheMutex.Unlock()
 
@@ -94,7 +94,7 @@ func MarkTaskAsDone(taskId int) error {
 	}
 
 	cachedTasks[idx].IsDone = true
-	tasksToWrite := cachedTasks
+	tasksToWrite := slices.Clone(cachedTasks)
 
 	cacheMutex.Unlock()
 
@@ -142,7 +142,7 @@ func DeleteTaskFromDatabase(taskId int) error {
 
 	cachedTasks = slices.Delete(cachedTasks, idx, idx+1)
 
-	tasksToWrite := cachedTasks
+	tasksToWrite := slices.Clone(cachedTasks)
 
 	cacheMutex.Unlock()
 

@@ -27,7 +27,7 @@ err := db.WriteDatabase(tasksToWrite)  // lê o array enquanto outra goroutine p
 
 **Como corrigir (escolher uma):**
 - [ ] Simples: segurar o lock através do `WriteDatabase` (mover `defer cacheMutex.Unlock()` para o fim).
-- [ ] Melhor para concorrência: copiar de verdade antes de soltar o lock — `tasksToWrite := slices.Clone(cachedTasks)`.
+- [x] Melhor para concorrência: copiar de verdade antes de soltar o lock — `tasksToWrite := slices.Clone(cachedTasks)`.
 - [ ] Escrever um teste que dispara N goroutines no repositório e rodar com `go test -race`
       para provar a corrida (os testes atuais são sequenciais e não a pegam).
 
