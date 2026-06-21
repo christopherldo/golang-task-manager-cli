@@ -78,8 +78,8 @@ fmt.Errorf("reading database file: %w", err)
 `GetLastTaskId()` assume que a última task do slice tem o maior ID, e `cachedLastTaskId` não é
 atualizado em deletes — pode reutilizar IDs (adicionar 5, deletar, adicionar de novo → ID 5 reaparece).
 
-- [ ] Usar um contador monotônico no struct (`lastID++` ao criar) ou calcular `max(IDs)` de verdade.
-- [ ] Garantir que IDs nunca sejam reutilizados.
+- [x] Usar um contador monotônico no struct (`lastID++` ao criar) ou calcular `max(IDs)` de verdade.
+- [x] Garantir que IDs nunca sejam reutilizados.
 
 ---
 

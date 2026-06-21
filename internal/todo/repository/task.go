@@ -1,18 +1,18 @@
 package repository
 
 import (
-	"encoding/json"
 	"fmt"
 	"slices"
 	"sync"
 
+	"chrisldo.com/todo-cli/internal/todo/db"
 	"chrisldo.com/todo-cli/internal/todo/models"
 )
 
 type TaskRepository struct {
 	mu               sync.RWMutex
 	cachedTasks      []models.Task
-	cachedLastTaskId *int
+	cachedLastTaskId int
 	store            Store
 }
 
@@ -27,12 +27,16 @@ func (r *TaskRepository) AppendTaskToDatabase(taskToBeAdded models.Task) error {
 	r.mu.Lock()
 
 	r.cachedTasks = append(r.cachedTasks, taskToBeAdded)
+	r.cachedLastTaskId++
+
 	tasksToWrite := slices.Clone(r.cachedTasks)
-	r.cachedLastTaskId = &taskToBeAdded.ID
 
 	r.mu.Unlock()
 
-	err := r.store.WriteDatabase(tasksToWrite)
+	err := r.store.WriteDatabase(db.DatabaseSchema{
+		LastID: taskToBeAdded.ID,
+		Tasks:  tasksToWrite,
+	})
 
 	if err != nil {
 		return fmt.Errorf("appending task to the database: %w", err)
@@ -78,10 +82,14 @@ func (r *TaskRepository) UpdateTaskOnDatabase(taskToBeUpdated models.Task) error
 	r.cachedTasks[idx] = taskToBeUpdated
 
 	tasksToWrite := slices.Clone(r.cachedTasks)
+	currentLastTaskID := r.cachedLastTaskId
 
 	r.mu.Unlock()
 
-	err := r.store.WriteDatabase(tasksToWrite)
+	err := r.store.WriteDatabase(db.DatabaseSchema{
+		LastID: currentLastTaskID,
+		Tasks:  tasksToWrite,
+	})
 
 	if err != nil {
 		return fmt.Errorf("saving task do the database: %w", err)
@@ -104,10 +112,14 @@ func (r *TaskRepository) MarkTaskAsDone(taskId int) error {
 
 	r.cachedTasks[idx].IsDone = true
 	tasksToWrite := slices.Clone(r.cachedTasks)
+	currentLastTaskID := r.cachedLastTaskId
 
 	r.mu.Unlock()
 
-	err := r.store.WriteDatabase(tasksToWrite)
+	err := r.store.WriteDatabase(db.DatabaseSchema{
+		LastID: currentLastTaskID,
+		Tasks:  tasksToWrite,
+	})
 
 	if err != nil {
 		return fmt.Errorf("marking task as done: %w", err)
@@ -117,24 +129,10 @@ func (r *TaskRepository) MarkTaskAsDone(taskId int) error {
 }
 
 func (r *TaskRepository) GetLastTaskId() int {
-	if r.cachedLastTaskId != nil {
-		r.mu.RLock()
-		defer r.mu.RUnlock()
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 
-		return *r.cachedLastTaskId
-	}
-
-	tasks := r.GetAllTasksFromDatabase()
-
-	if len(tasks) == 0 {
-		return 0
-	}
-
-	lastIndex := len(tasks) - 1
-
-	lastTask := tasks[lastIndex]
-
-	return lastTask.ID
+	return r.cachedLastTaskId
 }
 
 func (r *TaskRepository) DeleteTaskFromDatabase(taskId int) error {
@@ -152,10 +150,14 @@ func (r *TaskRepository) DeleteTaskFromDatabase(taskId int) error {
 	r.cachedTasks = slices.Delete(r.cachedTasks, idx, idx+1)
 
 	tasksToWrite := slices.Clone(r.cachedTasks)
+	currentLastTaskID := r.cachedLastTaskId
 
 	r.mu.Unlock()
 
-	err := r.store.WriteDatabase(tasksToWrite)
+	err := r.store.WriteDatabase(db.DatabaseSchema{
+		LastID: currentLastTaskID,
+		Tasks:  tasksToWrite,
+	})
 
 	if err != nil {
 		return fmt.Errorf("saving tasks to the database: %w", err)
@@ -165,20 +167,14 @@ func (r *TaskRepository) DeleteTaskFromDatabase(taskId int) error {
 }
 
 func (r *TaskRepository) LoadDatabaseToMemory() error {
-	bytes, err := r.store.ReadDatabase()
+	database, err := r.store.ReadDatabase()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("reading database: %w", err)
 	}
 
-	err = json.Unmarshal(bytes, &r.cachedTasks)
-
-	if err != nil {
-		return fmt.Errorf("parsing JSON: %w", err)
-	}
-
-	lastTaskId := r.GetLastTaskId()
-	r.cachedLastTaskId = &lastTaskId
+	r.cachedTasks = slices.Clone(database.Tasks)
+	r.cachedLastTaskId = database.LastID
 
 	return nil
 }

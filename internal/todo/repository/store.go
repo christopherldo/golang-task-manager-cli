@@ -1,8 +1,10 @@
 package repository
 
-import "chrisldo.com/todo-cli/internal/todo/models"
+import (
+	"chrisldo.com/todo-cli/internal/todo/db"
+)
 
 type Store interface {
-	ReadDatabase() ([]byte, error)
-	WriteDatabase(tasks []models.Task) error
+	ReadDatabase() (db.DatabaseSchema, error)
+	WriteDatabase(schema db.DatabaseSchema) error
 }

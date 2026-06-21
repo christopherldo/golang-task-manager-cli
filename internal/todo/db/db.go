@@ -9,6 +9,11 @@ import (
 	"chrisldo.com/todo-cli/internal/todo/models"
 )
 
+type DatabaseSchema struct {
+	LastID int           `json:"last_task_id"`
+	Tasks  []models.Task `json:"tasks"`
+}
+
 type FileStore struct {
 	mu       sync.RWMutex
 	filePath string
@@ -32,7 +37,10 @@ func (fs *FileStore) ensureDataBaseExists() error {
 	_, err := os.Stat(fs.filePath)
 
 	if os.IsNotExist(err) {
-		err = fs.WriteDatabase([]models.Task{})
+		err = fs.WriteDatabase(DatabaseSchema{
+			LastID: 0,
+			Tasks:  []models.Task{},
+		})
 
 		if err != nil {
 			return fmt.Errorf("initializing database: %w", err)
@@ -48,30 +56,40 @@ func (fs *FileStore) ensureDataBaseExists() error {
 	return nil
 }
 
-func (fs *FileStore) ReadDatabase() ([]byte, error) {
+func (fs *FileStore) ReadDatabase() (DatabaseSchema, error) {
 	fs.mu.RLock()
 	defer fs.mu.RUnlock()
+
+	var schema DatabaseSchema
 
 	fileBytes, err := os.ReadFile(fs.filePath)
 
 	if err != nil {
-		return nil, fmt.Errorf("reading file: %w", err)
+		return schema, fmt.Errorf("reading file: %w", err)
 	}
 
-	return fileBytes, nil
+	if len(fileBytes) == 0 {
+		return schema, nil
+	}
+
+	if err := json.Unmarshal(fileBytes, &schema); err != nil {
+		return schema, fmt.Errorf("parsing database JSON: %w", err)
+	}
+
+	return schema, nil
 }
 
-func (fs *FileStore) WriteDatabase(tasks []models.Task) error {
-	fileData, err := json.MarshalIndent(tasks, "", "  ")
-
-	if err != nil {
-		return fmt.Errorf("enconding JSON: %w", err)
-	}
-
+func (fs *FileStore) WriteDatabase(schema DatabaseSchema) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	err = os.WriteFile(fs.filePath, fileData, 0644)
+	fileBytes, err := json.Marshal(schema)
+
+	if err != nil {
+		return fmt.Errorf("parsing JSON to bytes: %w", err)
+	}
+
+	err = os.WriteFile(fs.filePath, fileBytes, 0644)
 
 	if err != nil {
 		return fmt.Errorf("writing to database file: %w", err)

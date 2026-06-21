@@ -138,9 +138,11 @@ func TestLoadDatabaseToMemory(t *testing.T) {
 
 	repo := NewTaskRepository(store)
 
-	repo.store.WriteDatabase([]models.Task{
-		{ID: 1, Description: "Task 1", IsDone: false},
-	})
+	repo.store.WriteDatabase(db.DatabaseSchema{
+		LastID: repo.GetLastTaskId(),
+		Tasks: []models.Task{
+			{ID: 1, Description: "Task 1", IsDone: false},
+		}})
 
 	err := repo.LoadDatabaseToMemory()
 
